@@ -3,15 +3,12 @@
 
 from gnuradio import analog
 from gnuradio import audio
-from gnuradio import eng_notation
 from gnuradio import filter
 from gnuradio import gr
-from gnuradio.eng_option import eng_option
 from gnuradio.filter import firdes
 
-from optparse import OptionParser
 import osmosdr
-import sys
+
 
 
 class SignalReceiver(gr.top_block):
@@ -19,12 +16,18 @@ class SignalReceiver(gr.top_block):
         gr.top_block.__init__(self, "SignalReceiver")
 
         # Variables for FM and AM
+        # FM
         self.samp_rate = 2e6
         self.RTL_SDR_center_freq = 97.5e6
 
-        self.cutoff_freq = 75e3
-        self.transition_width = 25e3
-        self.demodulation_scheme = ''
+        self.FM_cutoff_freq = 75e3
+        self.FM_transition_width = 25e3
+        # AM
+        # TODO: FROM HERE
+        self.AirAM_cutoff_freq = 7e3
+        self.AirAM_transition_width = 15e2
+        self.AirAM_default_Volume = 50
+        self.demodulation_scheme = 'FM'
 
         # Setting Blocks
         self.audio_sink_0 = audio.sink(48000, '', True)
@@ -41,7 +44,7 @@ class SignalReceiver(gr.top_block):
         self.rtlsdr_source_0.set_bb_gain(30, 0)
         self.rtlsdr_source_0.set_antenna('', 0)
         self.rtlsdr_source_0.set_bandwidth(0, 0)
-
+        # FM
         self.rational_resampler_FM_0 = filter.rational_resampler_fff(
             interpolation=48,
             decimation=50,
@@ -50,17 +53,25 @@ class SignalReceiver(gr.top_block):
         )
 
         self.low_pass_filter_FM_0 = filter.fir_filter_ccf(4, firdes.low_pass(
-            1, self.samp_rate, self.cutoff_freq, self.transition_width, firdes.WIN_BLACKMAN, 6.76))
+            1, self.samp_rate, self.FM_cutoff_freq, self.FM_transition_width, firdes.WIN_BLACKMAN, 6.76))
         self.analog_wfm_rcv_0 = analog.wfm_rcv(
             quad_rate=500000,
             audio_decimation=10,
         )
+
+        # AM
 
     def connect_FM_blocks(self):
         self.connect((self.rtlsdr_source_0, 0), (self.low_pass_filter_FM_0, 0))
         self.connect((self.low_pass_filter_FM_0, 0), (self.analog_wfm_rcv_0, 0))
         self.connect((self.analog_wfm_rcv_0, 0), (self.rational_resampler_FM_0, 0))
         self.connect((self.rational_resampler_FM_0, 0), (self.audio_sink_0, 0))
+
+    def disconnect_FM_blocks(self):
+        self.disconnect((self.rtlsdr_source_0, 0), (self.low_pass_filter_FM_0, 0))
+        self.disconnect((self.low_pass_filter_FM_0, 0), (self.analog_wfm_rcv_0, 0))
+        self.disconnect((self.analog_wfm_rcv_0, 0), (self.rational_resampler_FM_0, 0))
+        self.disconnect((self.rational_resampler_FM_0, 0), (self.audio_sink_0, 0))
 
 
 def main(options=None):
