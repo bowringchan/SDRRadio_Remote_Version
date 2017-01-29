@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from os import mkfifo
 from os import unlink
 
