@@ -6,13 +6,14 @@ from gnuradio import audio
 from gnuradio import filter
 from gnuradio import gr
 from gnuradio.filter import firdes
+from gnuradio import blocks
 
 import osmosdr
 
 
 
 class SignalReceiver(gr.top_block):
-    def __init__(self):
+    def __init__(self,fifo_filename):
         gr.top_block.__init__(self, "SignalReceiver")
 
         # Variables for FM and AM
@@ -61,11 +62,27 @@ class SignalReceiver(gr.top_block):
 
         # AM
 
+        #FileSink
+        self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vff((128,))
+        self.blocks_float_to_uchar_0 = blocks.float_to_uchar()
+        self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_char * 1, fifo_filename, False)
+        self.blocks_file_sink_0.set_unbuffered(False)
+        self.blocks_add_const_vxx_0 = blocks.add_const_vff((127,))
+
     def connect_FM_blocks(self):
         self.connect((self.rtlsdr_source_0, 0), (self.low_pass_filter_FM_0, 0))
         self.connect((self.low_pass_filter_FM_0, 0), (self.analog_wfm_rcv_0, 0))
         self.connect((self.analog_wfm_rcv_0, 0), (self.rational_resampler_FM_0, 0))
         self.connect((self.rational_resampler_FM_0, 0), (self.audio_sink_0, 0))
+
+    def connect_FM_blocks_filesink(self):
+        self.connect((self.rtlsdr_source_0, 0), (self.low_pass_filter_FM_0, 0))
+        self.connect((self.low_pass_filter_FM_0, 0), (self.analog_wfm_rcv_0, 0))
+        self.connect((self.analog_wfm_rcv_0, 0), (self.rational_resampler_FM_0, 0))
+        self.connect((self.rational_resampler_FM_0, 0), (self.blocks_multiply_const_vxx_0, 0))
+        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.blocks_add_const_vxx_0, 0))
+        self.connect((self.blocks_add_const_vxx_0, 0), (self.blocks_float_to_uchar_0, 0))
+        self.connect((self.blocks_float_to_uchar_0, 0), (self.blocks_file_sink_0, 0))
 
     def disconnect_FM_blocks(self):
         self.disconnect((self.rtlsdr_source_0, 0), (self.low_pass_filter_FM_0, 0))
@@ -73,12 +90,17 @@ class SignalReceiver(gr.top_block):
         self.disconnect((self.analog_wfm_rcv_0, 0), (self.rational_resampler_FM_0, 0))
         self.disconnect((self.rational_resampler_FM_0, 0), (self.audio_sink_0, 0))
 
-
-def main(options=None):
-    tb = SignalReceiver()
-    tb.connect_FM_blocks()
-    tb.run()
+    def disconnect_FM_blocks_filesink(self):
+        self.disconnect((self.rtlsdr_source_0, 0), (self.low_pass_filter_FM_0, 0))
+        self.disconnect((self.low_pass_filter_FM_0, 0), (self.analog_wfm_rcv_0, 0))
+        self.disconnect((self.analog_wfm_rcv_0, 0), (self.rational_resampler_FM_0, 0))
+        self.disconnect((self.rational_resampler_FM_0, 0), (self.blocks_multiply_const_vxx_0, 0))
+        self.disconnect((self.blocks_multiply_const_vxx_0, 0), (self.blocks_add_const_vxx_0, 0))
+        self.disconnect((self.blocks_add_const_vxx_0, 0), (self.blocks_float_to_uchar_0, 0))
+        self.disconnect((self.blocks_float_to_uchar_0, 0), (self.blocks_file_sink_0, 0))
 
 
 if __name__ == '__main__':
-    main()
+    tb = SignalReceiver()
+    tb.connect_FM_blocks()
+    tb.run()

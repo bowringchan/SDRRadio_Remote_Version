@@ -3,7 +3,7 @@ from os import mkfifo
 from os import unlink
 
 
-class fifo_generator:
+class Fifo_Generator:
     def mkfifo_file(self, filename, numeric_mod):
         self.filename = filename
         self.numeric_mod = numeric_mod
