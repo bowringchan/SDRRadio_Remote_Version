@@ -8,7 +8,9 @@ class Fifo_Generator:
         self.filename = filename
         self.numeric_mod = numeric_mod
         mkfifo(filename, numeric_mod)
-        self.fifo_desc = open(filename, 'w')
+
+    def open_file_for_read(self):
+        self.fifo_desc = open(self.filename, 'r')
         return self.fifo_desc
 
     def delfifo_file(self):

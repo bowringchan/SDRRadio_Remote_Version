@@ -65,7 +65,9 @@ class SignalReceiver(gr.top_block):
         #FileSink
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vff((128,))
         self.blocks_float_to_uchar_0 = blocks.float_to_uchar()
+        print 'Debug point: dsp file sink start\n'
         self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_char * 1, fifo_filename, False)
+        print 'Debug point: dsp file sink pass\n'
         self.blocks_file_sink_0.set_unbuffered(False)
         self.blocks_add_const_vxx_0 = blocks.add_const_vff((127,))
 
