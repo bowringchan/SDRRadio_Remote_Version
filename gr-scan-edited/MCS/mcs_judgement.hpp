@@ -18,21 +18,26 @@
 #include <set>
 #include <utility>
 #include <cmath>
-
+#include <iostream>
 #include <boost/shared_ptr.hpp>
 
 #include <gnuradio/block.h>
 #include <gnuradio/io_signature.h>
 #include <osmosdr/source.h>
+#include <complex.h>
+#include <fftw3.h>
 
 
 class mcs_judgement : public gr::block
 {
 public:
-	mcs_judgement():
-	gr::block("mcs_judgement",
-			  gr::io_signature::make(3, 3, sizeof (float) * vector_length),
-			  gr::io_signature::make(0, 0, 0)),
+	mcs_judgement(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
+		     double bandwidth0,unsigned int avg_size) :
+			  gr::block("mcs_judgement",
+					gr::io_signature::make(3, 3, sizeof (float) * vector_length),
+					gr::io_signature::make(0, 0, 0)),
+			  m_source(source),
+			  m_avg_size(avg_size),
 			  m_vector_length(vector_length),//size of the FFT
 			  m_buffer_fft(new float[vector_length]), //buffer into which we accumulate the total for averaging
 			  m_buffer_ifft(new float[vector_length]), //buffer into which we accumulate the total for averaging
@@ -41,6 +46,11 @@ public:
 			  m_bandwidth0(bandwidth0), //samples per second 采样率 "fs"
 			  
 			  {
+				  m_source->set_center_freq(m_centre_freq_1)
+				  m_source -> set_gain_mode(false);
+				  m_source -> set_gain(30);
+				  m_source -> set_if_gain(30);
+				  m_source -> set_bb_gain(30);
 			  }
 	virtual ~mcs_judgement(){
 		delete []m_buffer_ifft; //delete the buffer
@@ -85,8 +95,8 @@ private:
 		int mcs_type = 0; 
 		//mcs_type ==1 FM
 		//mcs_type ==2 AM;
-		StartJudgement(&freqs,bands0,ifft0,phase0);
-		
+		StartJudgement(&mcs_type,freqs,bands0,ifft0,phase0);
+		cout<< "mcs_type: "<<mcs_type;
 	}
 	
 	
@@ -96,16 +106,16 @@ private:
 	* bands0是从负频率到正频率的整个频谱，中间点为中心频率。注意，频谱对称吗？不对称,使用的是complex to mag
 	* ifft0是采样点(浮点数，假设做了complex to mag, squarted)
 	*/
-	void StartJudgement(int* mcs_type,double *freqs, float *bands0 float* ifft0, float* phase0){
+	void StartJudgement(int* mcs_type,double *freqs, float *bands0,float* ifft0, float* phase0){
 		  float z[m_vector_length];//实信号的瞬时幅度
 		  float ma = 0;//瞬时(绝对)幅度的平均值
 		  float y2[m_vector_length];//幅度比,即为文献中的an(i)
 		  float y3[m_vector_length];//归一化瞬时幅度
-		  float y2n[m_vector_length];//即为文献中的acn(i)
+		  double y2n[m_vector_length];//即为文献中的acn(i)
+		  double s[m_vector_length];
 		  float y4 = 0;//y3的绝对值的最大值
-		  float s[m_vector_length];
-		  float R[m_vector_length];
-		  float Rmax = 0; //零中心归一化瞬时幅度的谱密度的最大值
+		  double R[m_vector_length];
+		  double Rmax = 0; //零中心归一化瞬时幅度的谱密度的最大值
 		  float Ck[m_vector_length];
 		  
 		  constexpr float pi = 3.1415926; // 相位的单位
@@ -148,11 +158,18 @@ private:
 		  for(unsigned int i=0; i< m_vector_length; ++i){
 			  y2n[i] = y3[i]/y4;
 		  }
-		  //TODO
-		  //完成此句　s=fft(y2n);需要做fft变换
 		  
-		  for(unsigned int i=0; i< m_vector_length; ++i){
-			  R[i] = std::abs(s[i]);
+		  //s=fft(y2n);做fft变换
+		  fftw_plan p;
+		  fftw_plan fftw_plan_r2r_1d(vector_length, y2n, s,
+                           FFTW_R2HC, 0);
+		  fftw_execute(my_plan);
+		  
+		  fftw_destroy_plan(my_plan);
+		  
+		  //s数组的格式:r0, r1, r2, ..., rn/2, i(n+1)/2-1, ..., i2, i1; r是实部,i是虚部
+		  for(unsigned int i=0; i< m_vector_length/2; ++i){
+			  R[i] = std::abs(s[i]*s[i]+s[m_vector_length-i]*s[m_vector_length-i]); //此处和matlab代码不同，没有开根号
 			  if(R[i] > Rmax){
 				  Rmax = R[i];
 			  }
@@ -247,10 +264,21 @@ private:
 		}
 	}
 	
+	unsigned int m_avg_size;
 	unsigned int m_vector_length;
 	float *m_buffer_ifft;
 	float *m_buffer_fft;
 	float *m_buffer_phase;
 	double m_bandwidth0;
 	double m_centre_freq_1;
+}
+mcs_judgement(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
+		     double bandwidth0,unsigned int avg_size) :
+/* Shared pointer thing gnuradio is fond of */
+typedef boost::shared_ptr<mcs_judgement> mcs_judgement_sptr;
+mcs_judgement make_mcs_judgement(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
+		     double bandwidth0,unsigned int avg_size)
+{
+	return boost::shared_ptr<mcs_judgement>(new mcs_judgement(source, vector_length, centre_freq_1,
+		     bandwidth0,avg_size));
 }
