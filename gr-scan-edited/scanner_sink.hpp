@@ -161,6 +161,7 @@ private:
 		unsigned int peak = 0;
 		for (unsigned int i = 0; i < m_vector_length; ++i) {
 			if (sig) { //we're already in a signal
+			//细滑动平均相比于粗滑动平均，更能凸显峰值。两者做差即可得到峰值点。这就是此处寻找信号的机制。
 				if (diffs[peak] < diffs[i]) //we found a rough end to the signal
 					peak = i;//peak是bands1和bands2之差的峰值点
 
