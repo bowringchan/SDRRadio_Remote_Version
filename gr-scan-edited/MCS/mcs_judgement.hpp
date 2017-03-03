@@ -1,5 +1,9 @@
 /*
-
+	gr-mcs_judgement - A GNU Radio modulation scheme jugement tool
+	Copyright (C) 2017 Bowring Chan <bowringchan@gmail.com>. All Rights Reserved.
+	Copyright (C) 2015 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+	Copyright (C) 2012  Nicholas Tomlinson
+	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -46,11 +50,7 @@ public:
 			  m_bandwidth0(bandwidth0), //samples per second 采样率 "fs"
 			  
 			  {
-				  m_source->set_center_freq(m_centre_freq_1)
-				  m_source -> set_gain_mode(false);
-				  m_source -> set_gain(30);
-				  m_source -> set_if_gain(30);
-				  m_source -> set_bb_gain(30);
+				  
 			  }
 	virtual ~mcs_judgement(){
 		delete []m_buffer_ifft; //delete the buffer
@@ -64,7 +64,7 @@ private:
 		for (int i = 0; i < ninput_items[0]; ++i)
 			ProcessVector(static_cast<const float *>(input_items[0]) + i * m_vector_length,
 			static_cast<const float *>(input_items[1]) + i * m_vector_length,
-			static_cast<const float *>(input_items[0]) + i * m_vector_length);
+			static_cast<const float *>(input_items[2]) + i * m_vector_length);
 
 		consume_each(ninput_items[0]);//0#接口里的是fft处理过的频域点
 		consume_each(ninput_items[1]);//1#接口里的是没有经过fft处理的数据的幅度
@@ -272,11 +272,10 @@ private:
 	double m_bandwidth0;
 	double m_centre_freq_1;
 }
-mcs_judgement(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
-		     double bandwidth0,unsigned int avg_size) :
+
 /* Shared pointer thing gnuradio is fond of */
 typedef boost::shared_ptr<mcs_judgement> mcs_judgement_sptr;
-mcs_judgement make_mcs_judgement(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
+mcs_judgement_sptr make_mcs_judgement(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
 		     double bandwidth0,unsigned int avg_size)
 {
 	return boost::shared_ptr<mcs_judgement>(new mcs_judgement(source, vector_length, centre_freq_1,
