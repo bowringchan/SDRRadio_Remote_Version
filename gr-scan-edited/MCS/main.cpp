@@ -20,20 +20,23 @@
 
 
 #include <cstdio>
+#include <cstdlib>
 
 #include "topblock.hpp"
 
 int main(int argc, char **argv)
 {
-	unsigned int vector_length = 2000;//vector_length = sample_rate / FFT_width
-	double centre_freq_1 = 100700000;//center_frequency
+	unsigned int vector_length = 10000;//vector_length = sample_rate / FFT_width
+	double centre_freq_1 = 1000 * std::atoi(argv[1]);//center_frequency
 	double bandwidth0 = 2000000;//sample_rate
-	double m_avg_size = 5;//用于平均的frame的个数
+	double signal_bandwidth = 1000 * std::atoi(argv[2]);; // 信号带宽是指中心频率到信号右边界的带宽
+	double m_avg_size = 1;//用于平均的frame的个数
 	
 	TopBlock top_block(vector_length,
 			   centre_freq_1,
 			   bandwidth0,
-			   1/2*bandwidth0,
+			   signal_bandwidth,
+			   signal_bandwidth/4,
 			   m_avg_size);
 			  
 	top_block.run();

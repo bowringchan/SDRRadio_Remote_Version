@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <stdint.h>
+#include <complex>
 
 #include <gnuradio/top_block.h>
 #include <osmosdr/source.h>
@@ -27,28 +28,32 @@
 #include <gnuradio/fft/fft_vcc.h>
 #include <gnuradio/blocks/complex_to_mag_squared.h>
 #include <gnuradio/filter/single_pole_iir_filter_ff.h>
+#include <gnuradio/blocks/complex_to_magphase.h>
+#include <gnuradio/filter/firdes.h>
+#include <gnuradio/filter/freq_xlating_fir_filter_ccf.h>
 #include "mcs_judgement.hpp"
 
 class TopBlock : public gr::top_block
 {
 public:
-	TopBlock(unsigned int vector_length,double centre_freq_1,
-		     double bandwidth0, double cutoff_freq,double transition_width,unsigned int avg_size):
+	TopBlock(unsigned int vector_length,double centre_freq_1,double bandwidth0, double cutoff_freq,double transition_width,unsigned int avg_size):
 		gr::top_block("Top Block"),
 		window(GetWindow(vector_length)),
-		source(osmosdr::source::make()),
-		lps(gr::filter::firdes::low_pass::make(1,bandwidth0,cutoff_freq,transition_width,WIN_BLACKMAN))
 		stv(gr::blocks::stream_to_vector::make(sizeof(float) * 2, vector_length)),
+		iir(gr::filter::single_pole_iir_filter_ff::make(1.0, vector_length)),
+		m_centre_freq_1(centre_freq_1),
+		source(osmosdr::source::make()),
 		fft(gr::fft::fft_vcc::make(vector_length, true, window, false, 1)),
 		ctmp(gr::blocks::complex_to_magphase::make(vector_length)),
-		iir(gr::filter::single_pole_iir_filter_ff::make(1.0, vector_length)),
-		sink(make_mcs_judgement(source, vector_length, centre_freq_1,
-		     bandwidth0,avg_size))
+		//blackman
+		fxff(gr::filter::freq_xlating_fir_filter_ccf::make(1,gr::filter::firdes::low_pass(1,2000000,cutoff_freq,transition_width,(gr::filter::firdes::win_type)3),0,2000000)),
+		sink(make_mcs_judgement(source, vector_length, centre_freq_1,bandwidth0,avg_size)),
+		ctm(gr::blocks::complex_to_mag_squared::make(vector_length))
 			 {
 				 /* Set up the OsmoSDR Source */
-				  source->set_sample_rate(sample_rate);
+				  source->set_sample_rate(2000000);
 				  source->set_freq_corr(0.0);
-				  source->set_center_freq(m_centre_freq_1)
+				  source->set_center_freq(m_centre_freq_1);
 				  source -> set_gain_mode(false);
 				  source -> set_gain(30);
 				  source -> set_if_gain(30);
@@ -56,13 +61,14 @@ public:
 				  
 				  
 				/* Set up the connections */
-				  connect(source, 0, lps, 0);
-				  connect(lps, 0,stv, 0)
+				  connect(source, 0, fxff, 0);
+				  connect(fxff, 0,stv, 0);
 				  connect(stv, 0, fft, 0);
 				  connect(fft, 0, ctmp, 0);
 				  connect(ctmp, 0, iir, 0);
 				  connect(iir, 0, sink, 0);
-				  connect(stv, 0, sink, 1);
+				  connect(stv, 0, ctm, 0);
+				  connect(ctm, 0, sink, 1);
 				  connect(ctmp, 1, sink, 2);
 				 
 			 }
@@ -91,13 +97,15 @@ private:
 		return total;
 	}	
 	
-
+	
 	std::vector<float> window;
-	gr::filter::firdes::low_pass lps;
-	osmosdr::source::sptr source;
 	gr::blocks::stream_to_vector::sptr stv;
+	gr::filter::single_pole_iir_filter_ff::sptr iir;
+	double m_centre_freq_1;
+	osmosdr::source::sptr source;
 	gr::fft::fft_vcc::sptr fft;
 	gr::blocks::complex_to_magphase::sptr ctmp;
-	gr::filter::single_pole_iir_filter_ff::sptr iir;
+	gr::filter::freq_xlating_fir_filter_ccf::sptr fxff;
 	mcs_judgement_sptr sink;
-}
+	gr::blocks::complex_to_mag_squared::sptr ctm;
+};

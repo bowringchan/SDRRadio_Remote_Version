@@ -21,7 +21,7 @@
 VERSION = 20170302
 CXXFLAGS ?= -O3 -march=native -fomit-frame-pointer
 CXXFLAGS +=-DVERSION="\"gr-mcs_judgement $(VERSION)\"" -Wall
-LDLIBS = -lgnuradio-filter -lgnuradio-blocks -lgnuradio-pmt -lfftw3 -lgnuradio-runtime -lgnuradio-osmosdr -lboost_system
+LDLIBS = -lgnuradio-filter -lgnuradio-blocks -lgnuradio-pmt -lgnuradio-fft -lgnuradio-runtime -lgnuradio-osmosdr -lboost_system -lfftw3
 
 PREFIX ?= /usr
 DESTDIR ?=
