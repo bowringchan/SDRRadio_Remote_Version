@@ -118,7 +118,7 @@ private:
 		ZeroBuffer(); //get ready to start again
 
 		++m_wait_count; //we've just done another listen
-		if (m_time / (m_bandwidth0 / static_cast<double>(m_vector_length * m_avg_size)) <= m_wait_count) { //if we should move to the next frequency
+		if (m_time / (m_bandwidth0 / static_cast<double>(m_vector_length * m_avg_size)) <= m_wait_count) { //if we should move to the next frequency 希望覆盖到所有的点
 			for (;;) { //keep moving to the next frequency until we get to one we can listen on (copes with holes in the tunable range)
 				if (m_centre_freq_2 <= m_centre_freq_1) { //we reached the end!
 					//do something to end the scan
