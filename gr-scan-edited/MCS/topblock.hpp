@@ -32,17 +32,18 @@
 #include <gnuradio/filter/firdes.h>
 #include <gnuradio/filter/freq_xlating_fir_filter_ccf.h>
 #include "mcs_judgement.hpp"
+#include <string>
 
 class TopBlock : public gr::top_block
 {
 public:
-	TopBlock(unsigned int vector_length,double centre_freq_1,double bandwidth0, double cutoff_freq,double transition_width,unsigned int avg_size):
+	TopBlock(unsigned int vector_length,double centre_freq_1,double bandwidth0, double cutoff_freq,double transition_width,unsigned int avg_size,const std::string &device_args):
 		gr::top_block("Top Block"),
 		window(GetWindow(vector_length)),
 		stv(gr::blocks::stream_to_vector::make(sizeof(float) * 2, vector_length)),
 		iir(gr::filter::single_pole_iir_filter_ff::make(1.0, vector_length)),
 		m_centre_freq_1(centre_freq_1),
-		source(osmosdr::source::make()),
+		source(osmosdr::source::make(device_args)),
 		fft(gr::fft::fft_vcc::make(vector_length, true, window, false, 1)),
 		ctmp(gr::blocks::complex_to_magphase::make(vector_length)),
 		//blackman
@@ -52,23 +53,24 @@ public:
 			 {
 				 /* Set up the OsmoSDR Source */
 				  source->set_sample_rate(2000000);
-				  source->set_freq_corr(0.0);
 				  source->set_center_freq(m_centre_freq_1);
-				  source -> set_gain_mode(false);
-				  source -> set_gain(30);
-				  source -> set_if_gain(30);
-				  source -> set_bb_gain(30);
-				  
+				  if(device_args == ""){
+				    source->set_freq_corr(0.0);
+				    source -> set_gain_mode(false);
+				    source -> set_gain(30);
+				    source -> set_if_gain(30);
+				    source -> set_bb_gain(30);
+				  }
 				  
 				/* Set up the connections */
 				  connect(source, 0, fxff, 0);
 				  connect(fxff, 0,stv, 0);
 				  connect(stv, 0, fft, 0);
-				  connect(fft, 0, ctmp, 0);
-				  connect(ctmp, 0, iir, 0);
+				  connect(fft, 0, ctm, 0);
+				  connect(ctm, 0, iir, 0);
 				  connect(iir, 0, sink, 0);
-				  connect(stv, 0, ctm, 0);
-				  connect(ctm, 0, sink, 1);
+				  connect(stv, 0, ctmp, 0);
+				  connect(ctmp, 0, sink, 1);
 				  connect(ctmp, 1, sink, 2);
 				 
 			 }

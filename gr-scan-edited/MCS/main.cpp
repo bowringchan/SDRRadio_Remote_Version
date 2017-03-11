@@ -21,23 +21,31 @@
 
 #include <cstdio>
 #include <cstdlib>
-
+#include <string>
 #include "topblock.hpp"
 
 int main(int argc, char **argv)
 {
-	unsigned int vector_length = 10000;//vector_length = sample_rate / FFT_width
-	double centre_freq_1 = 1000 * std::atoi(argv[1]);//center_frequency
+	unsigned int vector_length = 20000;//vector_length = sample_rate / FFT_width
+	double centre_freq_1 = std::atof(argv[1]);//center_frequency
 	double bandwidth0 = 2000000;//sample_rate
-	double signal_bandwidth = 1000 * std::atoi(argv[2]); // 信号带宽是指中心频率到信号右边界的带宽
+	double signal_bandwidth = std::atof(argv[2]); // 信号带宽是指中心频率到信号右边界的带宽
 	double m_avg_size = std::atoi(argv[3]);;//用于平均的frame的个数
+	std::string device_args="";
+	if(std::atoi(argv[4]) == 0){
+	    
+	}else{
+	    device_args = argv[4];
+	}
 	
 	TopBlock top_block(vector_length,
 			   centre_freq_1,
 			   bandwidth0,
 			   signal_bandwidth,
 			   signal_bandwidth/4,
-			   m_avg_size);
+			   m_avg_size,
+			   device_args
+			   );
 			  
 	top_block.run();
 	return 0; //actually, we never get here because of the rude way in which we end the scan

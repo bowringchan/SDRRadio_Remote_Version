@@ -30,7 +30,7 @@
 #include <osmosdr/source.h>
 #include <complex.h>
 #include <fftw3.h>
-
+#include <fstream>
 
 class mcs_judgement : public gr::block
 {
@@ -83,7 +83,7 @@ private:
 		}
 		++m_count; //increment the total
 		
-		std::cout << "Step into here: m_count" << std::endl;
+		//std::cout << "Step into here: m_count" << std::endl;
 		if (m_avg_size != m_count){
 			return; //we haven't yet averaged over the number we intended to
 		}
@@ -99,7 +99,7 @@ private:
 		int mcs_type = 0; 
 		//mcs_type ==1 FM
 		//mcs_type ==2 AM;
-		std::cout << "Step into here: StartJudgement" << std::endl;
+		//std::cout << "Step into here: StartJudgement" << std::endl;
 		StartJudgement(&mcs_type,freqs,bands0,ifft0,phase0);
 		std::cout<< "\n\n\nmcs_type: is "<<mcs_type << "\nmcs_type ==1 FM\nmcs_type ==2 AM\n";
 		exit(0);
@@ -113,6 +113,28 @@ private:
 	* ifft0是采样点(浮点数，假设做了complex to mag, squarted)
 	*/
 	void StartJudgement(int* mcs_type,double *freqs, float *bands0,float* ifft0, float* phase0){
+		std::ofstream ofstream_ifft("ifft.txt");
+		if(ofstream_ifft.is_open()){
+			for(int i=0;i<m_vector_length;i++){
+				ofstream_ifft << ifft0[i] << std::endl;
+			}
+		}
+		ofstream_ifft.close();
+		std::ofstream ofstream_phase("phase.txt");
+		if(ofstream_phase.is_open()){
+			for(int i=0;i<m_vector_length;i++){
+				ofstream_phase << phase0[i] << std::endl;
+			}
+		}
+		ofstream_phase.close();
+		std::ofstream ofstream_fft("fft.txt");
+		if(ofstream_fft.is_open()){
+			for(int i=0;i<m_vector_length;i++){
+				ofstream_fft << bands0[i] << std::endl;
+			}
+		}
+		ofstream_fft.close();
+		
 		float z[m_vector_length];//实信号的瞬时幅度
 		float ma = 0;//瞬时(绝对)幅度的平均值
 		float y2[m_vector_length];//幅度比,即为文献中的an(i)
@@ -167,14 +189,14 @@ private:
 		for(unsigned int i=0; i< m_vector_length; ++i){
 			y2n[i] = y3[i]/y4;
 		}
-		  std::cout << "Step into here: fftw_plan_r2r_1d" << std::endl;
+		  //std::cout << "Step into here: fftw_plan_r2r_1d" << std::endl;
 		  //s=fft(y2n);做fft变换
 		fftw_plan my_plan;
 		my_plan = fftw_plan_r2r_1d(m_vector_length, y2n, s, FFTW_R2HC, 0);
 		fftw_execute(my_plan);
 		
 		fftw_destroy_plan(my_plan);
-		  std::cout << "Step out here: fftw_plan_r2r_1d" << std::endl;
+		  //std::cout << "Step out here: fftw_plan_r2r_1d" << std::endl;
 		//s数组的格式:r0, r1, r2, ..., rn/2, i(n+1)/2-1, ..., i2, i1; r是实部,i是虚部
 		for(unsigned int i=0; i< m_vector_length/2; ++i){
 			R[i] = std::abs(s[i]*s[i]+s[m_vector_length-i]*s[m_vector_length-i]); //此处和matlab代码不同，没有开根号
@@ -244,16 +266,13 @@ private:
 
 		  pp = (pl - pu)/(pl + pu);
 		  //判定过程啦，假设现在只需要判定AM,FM,则只需要对deltadp做判定
-		  std::cout << "Step into here: if(deltadp > deltadpt)" << std::endl;
+		  //std::cout << "Step into here: if(deltadp > deltadpt)" << std::endl;
 		  if(deltadp > deltadpt){
 			  *mcs_type = 1; //FM
 		  }else{
 			  *mcs_type = 2; //AM
 		  }
-		  std::cout << "\n\ndeltadp is: " << deltadp << std::endl;
-		  std::cout << "\n\na1 is: " << a1 << std::endl;
-		  std::cout << "\n\nd1 is: " << d1 << std::endl;
-		  std::cout << "\n\nphasen1 0 1 2 3 4 is: " << phasen1[0] << std::endl << phasen1[1] << std::endl << phasen1[2] << std::endl <<phasen1[3] <<std::endl<< phasen1[4]<< std::endl;
+		  std::cout << "deltadp" << deltadp << std::endl;
 	}
 		
 	void avg_ifft_phase(float* ifft, float* phase){

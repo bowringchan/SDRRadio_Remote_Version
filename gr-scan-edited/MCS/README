@@ -1,0 +1,2 @@
+use:
+gr-mcs_judgement centre_freq(hz) bandwidth(hz) avg_size device_args(0/direct_samp=2)
