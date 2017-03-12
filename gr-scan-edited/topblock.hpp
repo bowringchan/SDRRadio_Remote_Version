@@ -47,7 +47,7 @@ public:
 		fft(gr::fft::fft_vcc::make(vector_length, true, window, false, 1)),
 		ctf(gr::blocks::complex_to_mag_squared::make(vector_length)),
 		iir(gr::filter::single_pole_iir_filter_ff::make(1.0, vector_length)),
-		lg(gr::blocks::nlog10_ff::make(10, vector_length, -10 * std::log10(float(vector_length)) -10 * std::log10(float(GetWindowPower() / vector_length)))),/-10 * std::log10 , Bug Fixed/
+		lg(gr::blocks::nlog10_ff::make(10, vector_length, -10 * std::log10(float(vector_length)) -10 * std::log10(float(GetWindowPower() / vector_length)))),/* -10 * std::log10 , Bug Fixed */
 		/* Sink - this does most of the interesting work */
 		sink(make_scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, sample_rate, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv))
 	{

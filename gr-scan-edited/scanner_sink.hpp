@@ -27,7 +27,7 @@
 #include <gnuradio/block.h>
 #include <gnuradio/io_signature.h>
 #include <osmosdr/source.h>
-
+#include <fstream>
 
 class scanner_sink : public gr::block
 {
@@ -57,6 +57,15 @@ public:
 		m_start_time(time(0)), //the start time of the scan (useful for logging/reporting/monitoring)
 		m_outcsv(NULL)
 	{
+		/* testing start*/
+		// max_buffer = new float[m_vector_length];
+		// for(unsigned int i=0; i<m_vector_length; i++){
+			// max_buffer[i] = -140.0;
+		// }
+		/* testing end*/
+		/* testing start*/
+		noise_line = -44.0f;
+		/* testing end*/
 		m_source -> set_gain_mode(false);
 		m_source -> set_gain(30);
 		m_source -> set_if_gain(30);
@@ -79,6 +88,9 @@ public:
 	virtual ~scanner_sink()
 	{
 		delete []m_buffer; //delete the buffer
+		/* testing start*/
+		// delete []max_buffer;
+		/* testing end*/
 		if (m_outcsv)
 			fclose(m_outcsv);
 	}
@@ -96,8 +108,14 @@ private:
 	void ProcessVector(const float *input)
 	{
 		//Add the FFT to the total
-		for (unsigned int i = 0; i < m_vector_length; ++i)
+		for (unsigned int i = 0; i < m_vector_length; ++i){
 			m_buffer[i] += input[i];
+			/* testing start*/
+			// if(input[i] > max_buffer[i]){
+				// max_buffer[i] = input[i];
+			// }
+			/* testing end*/
+		}
 		++m_count; //increment the total
 
 		if (m_avg_size != m_count)
@@ -110,10 +128,47 @@ private:
 		float bands2[m_vector_length]; //coarse window bands
 
 		Rearrange(bands0, freqs, m_centre_freq_1, m_bandwidth0); //organise the buffer into a convenient order (saves to bands0)
+		/* testing start*/
+		std::ofstream ofstream_power("pw.txt");
+		if(ofstream_power.is_open()){
+			for(unsigned int i=0;i<m_vector_length;i++){
+				ofstream_power << bands0[i] << std::endl;
+			}
+		}
+		ofstream_power.close();
+		
+		/* testing end*/
 		GetBands(bands0, bands1, m_bandwidth1); //apply the fine window (saves to bands1) //滑动平均的结果
 		GetBands(bands0, bands2, m_bandwidth2); //apply the coarse window (saves to bands2)//bandwidth2默认为8倍的bandwidth1
-		PrintSignals(freqs, bands1, bands2);
+		
+		/* testing start*/
+		// std::ofstream ofstream_max_buffer("max_buffer.txt");
+		// if(ofstream_max_buffer.is_open()){
+			// for(unsigned int i=0;i<m_vector_length/2;i++){
+				// ofstream_max_buffer << max_buffer[i+1000] << std::endl;
+			// }
+			// for(unsigned int i=m_vector_length/2;i<m_vector_length;i++){
+				// ofstream_max_buffer << max_buffer[i-1000] << std::endl;
+			// }
+		// }
+		// ofstream_max_buffer.close();
+		/*
+		std::ofstream ofstream_bands2("bands2.txt");
+		if(ofstream_bands2.is_open()){
+			for(unsigned int i=0;i<m_vector_length;i++){
+				ofstream_bands2 << bands2[i] << std::endl;
+			}
+		}
+		ofstream_bands2.close();
+		exit(0);
+		*//* testing end*/
+		
+		
+		
+		
+		PrintSignals(freqs, bands0, bands1, bands2);
 		//准备新的一次扫描
+		
 		m_count = 0; //next time, we're starting from scratch - so note this
 		ZeroBuffer(); //get ready to start again
 
@@ -138,7 +193,7 @@ private:
 	//freqs是每个采样点对应的频率
 	//bands1是细滑动平均的结果
 	//bands2是粗滑动平均的结果
-	void PrintSignals(double *freqs, float *bands1, float *bands2)
+	void PrintSignals(double *freqs, float * bands0, float *bands1, float *bands2)
 	{
 		/* Calculate the current time after start */
 		unsigned int t = time(NULL) - m_start_time;
@@ -164,19 +219,27 @@ private:
 			//细滑动平均相比于粗滑动平均，更能凸显峰值。两者做差即可得到峰值点。这就是此处寻找信号的机制。
 				if (diffs[peak] < diffs[i]) //we found a rough end to the signal
 					peak = i;//peak是bands1和bands2之差的峰值点
+				
+				// if (diffs[i] < m_threshold) { //we're transitionning to the end
+					// /* look for the "start" of the signal 从峰值点开始，向左找信号频域的左边界，向右找的信号频域的右边界*/
+					
+					// unsigned int min = peak; //scan outwards for the minimum
+					// while ((diffs[min] > diffs[peak] - 3.0) && (min > 0)){ //while the signal is still more than half power
+						// min--;
+					// }
 
-				if (diffs[i] < m_threshold) { //we're transitionning to the end
-					/* look for the "start" of the signal */
-					//从峰值点开始，向左找信号频域的左边界，向右找的信号频域的右边界
-					unsigned int min = peak; //scan outwards for the minimum
-					while ((diffs[min] > diffs[peak] - 3.0) && (min > 0)){ //while the signal is still more than half power
-						min--;
-					}
-
-					/* look for the "end" */
-					unsigned int max = peak;
-					while ((diffs[max] > diffs[peak] - 3.0) && (max < m_vector_length - 1))
-						max++;
+					// /* look for the "end" */
+					// unsigned int max = peak;
+					// while ((diffs[max] > diffs[peak] - 3.0) && (max < m_vector_length - 1))
+						// max++;
+				   if (diffs[i] < m_threshold){
+					   unsigned int min = peak;
+					   while ((bands0[min] > noise_line) && (min > 0)){
+						   min--;
+					   }   
+					   unsigned int max = peak;
+					   while ((bands0[max] > noise_line) && (max < m_vector_length - 1))
+						 max++;
 					sig = false; //we're now in no signal state
 
 					/* Print the signal if it's a genuine hit */ 
@@ -293,6 +356,8 @@ private:
 	double m_time;
 	time_t m_start_time;
 	FILE *m_outcsv;
+	// float *max_buffer;
+	float noise_line;
 };
 
 /* Shared pointer thing gnuradio is fond of */
