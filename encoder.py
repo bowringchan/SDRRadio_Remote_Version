@@ -12,6 +12,11 @@ class Batch_Encoder:
         self.media_sequence = 1
         self.thread_running = True
 
+    def encode_ffmpeg_fifo(self):
+        #subprocess.call("ffmpeg -loop 1 -i image.jpg -f u8 -ar 48000 -channels 1 -i audio/filesink.raw -c:v libx264 -tune stillimage -pix_fmt yuv420p -ac 2 -c:a aac -f hls -hls_time 3 -hls_list_size 5 -hls_segment_filename 'audio%03d.ts' RTLSDR.m3u8",shell = True)
+        subprocess.call("ffmpeg -f u8 -ar 48000 -channels 1 -i audio/filesink.raw -c:a aac -f hls -hls_flags omit_endlist -hls_time 3 -hls_list_size 5 -hls_segment_filename 'audio%03d.ts' RTLSDR.m3u8",shell = True)
+        subprocess.call("sh clean.sh",shell = True)
+
     def encode(self):
         # 1s 8bit linear PCM raw audio data take 48KB
         #print 'Debug point: encode start reading'
@@ -19,16 +24,17 @@ class Batch_Encoder:
         output = open('audio/audio' + str(self.output_counter) + '.raw', 'w')
         output.write(buf)
         output.close()
-
-
         # TODO Convert And Append mp3 filename to output_list
         # lame -r -s 48 --bitwidth 8 --unsigned --quiet
-        subprocess.call(
-            "lame -r -s 48 --bitwidth 8 --unsigned --quiet -m m audio/audio" + str(self.output_counter) + ".raw"+
-             " audio/audio" + str(self.output_counter) + ".mp3",shell = True)
+		#ffmpeg -f u8 -ar 48000 -i audio1.raw -f mpegts output.mp3 -v 0
+        #subprocess.call(
+        #    "lame -r -s 48 --bitwidth 8 --unsigned --quiet -m m audio/audio" + str(self.output_counter) + ".raw"+
+        #     " audio/audio" + str(self.output_counter) + ".mp3",shell = True)
+        subprocess.call("ffmpeg -f u8 -ar 48000 -channels 1 -i audio/audio"+str(self.output_counter)+".raw -f mpegts -mpegts_copyts 1 -output_ts_offset "+ str((self.output_counter-1) * self.EXTINF)+" -b:a 128k audio/audio"+str(self.output_counter)+".mp3 -v 0",shell = True)
         self.output_list.append('audio/audio' + str(self.output_counter) + '.mp3')
-        if self.output_list.__len__() > 3:
-            self.output_list.pop(0)
+        #if self.output_list.__len__() > 5:
+            #self.output_list.pop(0)
+            #self.media_sequence += 1
 
     # ENTRY
     def encode_mkm3u8(self):
@@ -42,10 +48,9 @@ class Batch_Encoder:
                 m3u8_generator_i = m3u8_generator.M3u8_Generator(self.EXTINF)
 
                 m3u8_generator_i.generate(self.output_list, self.media_sequence)
-                self.media_sequence += 1
 
                 self.output_counter += 1
             else:
                 break
         self.fifo_tool_i.delfifo_file()
-        subprocess.call("sh clean.sh",shell = True)
+        subprocess.call("sudo sh clean.sh",shell = True)

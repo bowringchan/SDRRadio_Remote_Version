@@ -26,25 +26,29 @@
 
 int main(int argc, char **argv)
 {
-	unsigned int vector_length = 20000;//vector_length = sample_rate / FFT_width
-	double centre_freq_1 = std::atof(argv[1]);//center_frequency
-	double bandwidth0 = 2000000;//sample_rate
-	double signal_bandwidth = std::atof(argv[2]); // 信号带宽是指中心频率到信号右边界的带宽
-	double m_avg_size = std::atoi(argv[3]);;//用于平均的frame的个数
+	unsigned int vector_length = 2000;//vector_length = sample_rate / FFT_width
+	double centre_freq_1 = std::atof(argv[1]) - 500000 ;//centre_freq = signal_frequency - 0.5Mhz 规避0频率的DC
+	double bandwidth0 = 2000000;//sample_rate 2Mhz
+	double signal_bandwidth = std::atof(argv[2]); // 信号带宽
+	double signal_half_bandwidth = signal_bandwidth/2;
+	double m_avg_size = 1;//遗留的变量，稍后移除。
+	unsigned long phase_number = std::atoi(argv[3]);
 	std::string device_args="";
 	if(std::atoi(argv[4]) == 0){
-	    
+	    //30khz以上的频段，IQ采样
 	}else{
 	    device_args = argv[4];
+		//30khz以下的频段，Q采样
 	}
 	
 	TopBlock top_block(vector_length,
 			   centre_freq_1,
 			   bandwidth0,
-			   signal_bandwidth,
-			   signal_bandwidth/4,
+			   signal_half_bandwidth,
+			   signal_half_bandwidth/4,
 			   m_avg_size,
-			   device_args
+			   device_args,
+			   phase_number
 			   );
 			  
 	top_block.run();

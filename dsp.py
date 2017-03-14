@@ -19,7 +19,7 @@ class SignalReceiver(gr.top_block):
         # Variables for FM and AM
         # FM
         self.samp_rate = 2e6
-        self.RTL_SDR_center_freq = 97.5e6
+        self.RTL_SDR_center_freq = 100.7e6
 
         self.FM_cutoff_freq = 75e3
         self.FM_transition_width = 25e3

@@ -1,2 +1,3 @@
 use:
-gr-mcs_judgement centre_freq(hz) bandwidth(hz) avg_size device_args(0/direct_samp=2)
+gr-mcs_judgement centre_freq(hz) bandwidth(hz) phase_number device_args(0/direct_samp=2)
+				 信号的中心频率  信号的带宽	   用于统计的频点个数	大于30Mhz取0 否则取2；

@@ -21,7 +21,8 @@ def main():
     print 'fifo made\n'
     batch_encoder_i = encoder.Batch_Encoder(fifo_tool_i)
     print 'batch encoder constructed'
-    encode_mkm3u8_thread = threading.Thread(target=batch_encoder_i.encode_mkm3u8)
+    #encode_mkm3u8_thread = threading.Thread(target=batch_encoder_i.encode_mkm3u8)
+    encode_mkm3u8_thread = threading.Thread(target=batch_encoder_i.encode_ffmpeg_fifo)
     encode_mkm3u8_thread.start()
 
     sub_pid = os.fork()

@@ -37,25 +37,25 @@
 class TopBlock : public gr::top_block
 {
 public:
-	TopBlock(unsigned int vector_length,double centre_freq_1,double bandwidth0, double cutoff_freq,double transition_width,unsigned int avg_size,const std::string &device_args):
+	TopBlock(unsigned int vector_length,double centre_freq_1,double bandwidth0, double cutoff_freq,double transition_width,unsigned int avg_size,const std::string &device_args,unsigned long phase_number):
 		gr::top_block("Top Block"),
 		window(GetWindow(vector_length)),
 		stv(gr::blocks::stream_to_vector::make(sizeof(float) * 2, vector_length)),
 		iir(gr::filter::single_pole_iir_filter_ff::make(1.0, vector_length)),
 		m_centre_freq_1(centre_freq_1),
 		source(osmosdr::source::make(device_args)),
+		m_bandwidth0(bandwidth0),
 		fft(gr::fft::fft_vcc::make(vector_length, true, window, false, 1)),
 		ctmp(gr::blocks::complex_to_magphase::make(vector_length)),
 		//blackman
-		fxff(gr::filter::freq_xlating_fir_filter_ccf::make(1,gr::filter::firdes::low_pass(1,2000000,cutoff_freq,transition_width,(gr::filter::firdes::win_type)3),0,2000000)),
-		sink(make_mcs_judgement(source, vector_length, centre_freq_1,bandwidth0,avg_size)),
+		fxff(gr::filter::freq_xlating_fir_filter_ccf::make(1,gr::filter::firdes::low_pass(1,bandwidth0,cutoff_freq,transition_width,(gr::filter::firdes::win_type)3),500000,bandwidth0)),
+		sink(make_mcs_judgement(source, vector_length, centre_freq_1,bandwidth0,avg_size,phase_number)),
 		ctm(gr::blocks::complex_to_mag_squared::make(vector_length))
 			 {
 				 /* Set up the OsmoSDR Source */
-				  source->set_sample_rate(2000000);
+				  source->set_sample_rate(m_bandwidth0);
 				  source->set_center_freq(m_centre_freq_1);
 				  if(device_args == ""){
-				    source->set_freq_corr(0.0);
 				    source -> set_gain_mode(false);
 				    source -> set_gain(30);
 				    source -> set_if_gain(30);
@@ -68,7 +68,7 @@ public:
 				  connect(stv, 0, fft, 0);
 				  connect(fft, 0, ctm, 0);
 				  connect(ctm, 0, iir, 0);
-				  connect(iir, 0, sink, 0);
+				  connect(iir, 0, sink, 0);//得到的是FFT，幅度谱，不是功率谱。
 				  connect(stv, 0, ctmp, 0);
 				  connect(ctmp, 0, sink, 1);
 				  connect(ctmp, 1, sink, 2);
@@ -105,6 +105,7 @@ private:
 	gr::filter::single_pole_iir_filter_ff::sptr iir;
 	double m_centre_freq_1;
 	osmosdr::source::sptr source;
+	double m_bandwidth0;
 	gr::fft::fft_vcc::sptr fft;
 	gr::blocks::complex_to_magphase::sptr ctmp;
 	gr::filter::freq_xlating_fir_filter_ccf::sptr fxff;
