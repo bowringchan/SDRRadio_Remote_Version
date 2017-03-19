@@ -1,2 +1,2 @@
 rm audio/*.*
-rm *.ts
+rm static/*.ts

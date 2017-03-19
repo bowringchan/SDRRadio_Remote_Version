@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<program_list>
+<program id="pg_1"><freq>100700000</freq><bandwidth>75000</bandwidth><mcs>FM</mcs><play>play</play></program>
+<program id="pg_2"><freq>105600000</freq><bandwidth>75000</bandwidth><mcs>FM</mcs><play>play</play></program>
+</program_list>

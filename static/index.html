@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>软件定义无线电收音机</title>
+<script src="hls.min.js"></script>
+<script>
+
+function loadProgramList(){
+   var tab = document.getElementById("programlist");
+   var rowIndex = tab.rows.length+1;
+
+   var xmlresp;
+   xmlhttp=new XMLHttpRequest();
+   xmlhttp.onreadystatechange=function()
+  {
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+    {
+      xmlresp=xmlhttp.responseXML;
+      x=xmlresp.getElementsByTagName("program");
+      for(i=0; i<x.length; i++){
+         //插入一行
+        var tr  = tab.insertRow();
+        var td1 = tr.insertCell();
+        var td2 = tr.insertCell();
+        var td3 = tr.insertCell();
+        var td4 = tr.insertCell();
+         
+        td1.innerHTML = x[i].childNodes[0].firstChild.nodeValue;
+        td2.innerHTML = x[i].childNodes[1].firstChild.nodeValue;
+        td3.innerHTML = x[i].childNodes[2].firstChild.nodeValue;
+        td4.innerHTML = x[i].childNodes[3].firstChild.nodeValue;
+      }
+    }
+  }
+   xmlhttp.open("GET","/ajax/program_list/",true);
+   xmlhttp.send();
+  
+}
+window.onload=function(){
+    loadProgramList();
+    loadHls();
+}
+window.onunload=function(){
+    unloadHls();
+}
+//Mouse事件们
+function mouse_over(obj){
+    if(obj.alt=="play"){
+        obj.src="play_hover.png";
+    }else{
+        obj.src="pause_hover.png";
+    }
+}
+
+function mouse_out(obj){
+    if(obj.alt=="play"){
+        obj.src="play.png";
+    }else{
+        obj.src="pause.png"
+    }
+}
+
+function mouse_click(obj){
+    if(obj.alt=="play"){
+        obj.src="pause.png";
+        obj.alt="pause";
+    }else{
+        obj.src="play.png";
+        obj.alt="play";
+    }
+}
+//HTML5 HLS.js live player
+var hls;
+var video;
+function loadHls(){
+     if (Hls.isSupported()) {
+      video = document.getElementById('video');
+      hls = new Hls();
+      // bind them together
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+        console.log("video and hls.js are now bound together !");
+        hls.loadSource("RTLSDR.m3u8");
+        hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+          console.log("manifest loaded, found " + data.levels.length + " quality level");
+        });
+      });
+    }
+    video.play();
+}
+function unloadHls(){
+    hls.destroy();
+}
+</script>
+<style>
+ul#nav{ width:100%; height:60px; background:#00A2CA;text-align:center;margin:0 auto} 
+ul#nav li{display:inline; height:60px} 
+ul#nav li a{display:inline-block; padding:0 20px; height:60px; line-height:60px; color:#FFF; font-size:16px;text-decoration:none;} 
+ul#nav li a:hover{background:#0095BB} 
+table#programlist{width:80%;text-align:center;margin:0 auto}
+footer#ft{width:100%;text-align:center;margin:0 auto;position:absolute;bottom:0;}
+</style>
+</head>
+
+<body>
+<ul id="nav">
+<li><a href="/prglst/">节目列表</a></li>
+<li><a href="/autosrch/">自动搜台</a></li>
+<li><a href="/logout/">登出</a></li>
+</ul>
+<table id="programlist" border="1">
+<th>频率(hz)</th>
+<th>带宽(hz)</th>
+<th>调制方式</th>
+<th>播放</th>
+</table>
+<footer id="ft"><video id="video" hidden></video><img src="play.png" id="button" alt="play" onmouseover="mouse_over(this)" onmouseout="mouse_out(this)" onclick="mouse_click(this)"/></footer>
+</body>
+</html>
