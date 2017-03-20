@@ -5,7 +5,8 @@
 <title>软件定义无线电收音机</title>
 <script src="hls.min.js"></script>
 <script>
-
+var hls;
+var video;
 function loadProgramList(){
    var tab = document.getElementById("programlist");
    var rowIndex = tab.rows.length+1;
@@ -64,15 +65,16 @@ function mouse_out(obj){
 function mouse_click(obj){
     if(obj.alt=="play"){
         obj.src="pause.png";
+        video.play();
         obj.alt="pause";
     }else{
         obj.src="play.png";
+        video.pause();
         obj.alt="play";
     }
 }
 //HTML5 HLS.js live player
-var hls;
-var video;
+
 function loadHls(){
      if (Hls.isSupported()) {
       video = document.getElementById('video');
@@ -86,8 +88,7 @@ function loadHls(){
           console.log("manifest loaded, found " + data.levels.length + " quality level");
         });
       });
-    }
-    video.play();
+    }  
 }
 function unloadHls(){
     hls.destroy();

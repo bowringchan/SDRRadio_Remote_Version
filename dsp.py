@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# -*- coding: utf-8 -*-
+#coding=utf-8
 
 from gnuradio import analog
 from gnuradio import audio
@@ -101,6 +101,16 @@ class SignalReceiver(gr.top_block):
         self.disconnect((self.blocks_add_const_vxx_0, 0), (self.blocks_float_to_uchar_0, 0))
         self.disconnect((self.blocks_float_to_uchar_0, 0), (self.blocks_file_sink_0, 0))
 
+    def set_FM_freq(self, new_center_freq):
+        self.RTL_SDR_center_freq = new_center_freq
+        self.rtlsdr_source_0.set_center_freq(new_center_freq)
+
+    def set_cutoff_freq(self, new_cutoff_freq):
+        self.FM_cutoff_freq = new_cutoff_freq
+        self.FM_transition_width = new_cutoff_freq / 4
+        self.low_pass_filter_FM_0.set_taps(firdes.low_pass(
+            1, self.samp_rate, self.FM_cutoff_freq, self.FM_transition_width, firdes.WIN_BLACKMAN, 6.76))
+        
 
 if __name__ == '__main__':
     tb = SignalReceiver()
