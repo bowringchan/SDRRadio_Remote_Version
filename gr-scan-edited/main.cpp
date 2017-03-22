@@ -39,7 +39,8 @@ int main(int argc, char **argv)
 			   arguments.get_threshold(),
 			   arguments.get_time(),
 			   arguments.get_outcsv(),
-			   arguments.get_device_args());
+			   arguments.get_device_args(),
+               arguments.get_noise_line());
 	top_block.run();
 	return 0; //actually, we never get here because of the rude way in which we end the scan
 }

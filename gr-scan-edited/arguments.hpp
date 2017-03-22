@@ -35,7 +35,8 @@ public:
 		sample_rate(2000000.0),
 		fft_width(1000.0),
 		step(-1.0),
-		ptime(1.0)
+		ptime(1.0),
+        noise_line(-40.0f)
 	{
 		argp_parse (&argp_i, argc, argv, 0, 0, this);
 	}
@@ -110,6 +111,10 @@ public:
 	{
 		return device_args;
 	}
+    
+    float get_noise_line(){
+        return noise_line;
+    }
 
 private:
 	static error_t s_parse_opt(int key, char *arg, struct argp_state *state)
@@ -161,6 +166,8 @@ private:
 		case 'd':
 			device_args = std::string(arg);
 			break;
+        case 'n':
+            noise_line = atof(arg); //dbFS
 		case ARGP_KEY_ARG:
 			if (state->arg_num > 0)
 				argp_usage(state);
@@ -189,6 +196,7 @@ private:
 	double ptime;
 	std::string outcsv;
 	std::string device_args;
+    float noise_line;
 };
 
 argp_option Arguments::options[] = {
@@ -205,6 +213,7 @@ argp_option Arguments::options[] = {
 	{"time", 'p', "TIME", 0, "Time in seconds to scan on each frequency (default: 1)"},
 	{"output-csv", 'o', "OUTCSV", 0, "Output results to CSV file (default: [none])"},
 	{"device-args", 'd', "DEVICEARGS", 0, "Device arguments for OsmoSDR (default: [none])"},
+    {"noise-line", 'n', "dbFS", 0, "noise-line for OsmoSDR Power Spectrum"},
 	{0}
 };
 

@@ -7,6 +7,31 @@
 <script>
 var hls;
 var video;
+function httpGetAsync(theUrl)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() { 
+    }
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+    xmlHttp.send(null);
+}
+function sleep (time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+var clickEventExpression=function(theUrl,play_button){  
+    return function(){  
+        httpGetAsync(theUrl);
+        play_button.innerHTML = "加载"
+        unloadHls();
+        //sleep for 1*3*1000 = 3 seconds wait for new .ts arrived
+        sleep(4000).then(() => {
+        loadHls();
+        video.play();
+        play_button.innerHTML = "播放"
+});
+    }  
+}; 
 function loadProgramList(){
    var tab = document.getElementById("programlist");
    var rowIndex = tab.rows.length+1;
@@ -30,7 +55,11 @@ function loadProgramList(){
         td1.innerHTML = x[i].childNodes[0].firstChild.nodeValue;
         td2.innerHTML = x[i].childNodes[1].firstChild.nodeValue;
         td3.innerHTML = x[i].childNodes[2].firstChild.nodeValue;
-        td4.innerHTML = x[i].childNodes[3].firstChild.nodeValue;
+        var play_button = document.createElement("button"); 
+        play_button_href = "/frequency?freq="+x[i].childNodes[0].firstChild.nodeValue+"&bandwidth="+x[i].childNodes[1].firstChild.nodeValue;
+        play_button.onclick = clickEventExpression(play_button_href, play_button);
+        play_button.innerHTML = "播放";
+        td4.appendChild(play_button);
       }
     }
   }
@@ -91,6 +120,7 @@ function loadHls(){
     }  
 }
 function unloadHls(){
+    video.pause();
     hls.destroy();
 }
 </script>

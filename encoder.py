@@ -11,19 +11,21 @@ class Batch_Encoder:
         self.fifo_tool_i = fifo_tool_i
         self.output_list = []
         self.output_counter = 1
-        self.EXTINF = 5
+        self.EXTINF = 1
         self.media_sequence = 1
         self.thread_running = True
 
-    def encode_ffmpeg_fifo(self):
+    def encode_ffmpeg_fifo(self, encoder_ready):
         #subprocess.call("ffmpeg -loop 1 -i image.jpg -f u8 -ar 48000 -channels 1 -i audio/filesink.raw -c:v libx264 -tune stillimage -pix_fmt yuv420p -ac 2 -c:a aac -f hls -hls_time 3 -hls_list_size 5 -hls_segment_filename 'audio%03d.ts' RTLSDR.m3u8",shell = True)
-        ffmpeg_p = subprocess.Popen("ffmpeg -f u8 -ar 48000 -channels 1 -i ../audio/filesink.raw -c:a aac -f hls -hls_flags omit_endlist -hls_time 3 -hls_list_size 5 -hls_segment_filename 'audio%03d.ts' RTLSDR.m3u8 -v 0", shell=True,cwd = os.getcwd()+'/static',preexec_fn=os.setsid)
+        ffmpeg_p = subprocess.Popen('exec '+"ffmpeg -f u8 -ar 48000 -channels 1 -i ../audio/filesink.raw -c:a aac -f hls -hls_flags omit_endlist -hls_time "+str(self.EXTINF)+" -hls_list_size 3 -hls_segment_filename 'audio%03d.ts' RTLSDR.m3u8 -v 0", shell=True,cwd = os.getcwd()+'/static')
+        encoder_ready[0] = 1
         while True:
             if self.thread_running == True:
                 sleep(1)
             else:
-                os.killpg(os.getpgid(ffmpeg_p.pid), signal.SIGTERM)
-                print 'ffmpeg exited\n'
+                break
+        ffmpeg_p.kill()
+        print 'ffmpeg exited\n',ffmpeg_p.pid
 
     def encode(self):
         # 1s 8bit linear PCM raw audio data take 48KB

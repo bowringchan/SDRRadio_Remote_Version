@@ -35,7 +35,7 @@ public:
 	scanner_sink(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
 		     double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2,
 		     double step, unsigned int avg_size, double spread, double threshold, double ptime,
-		     const std::string &outcsv) :
+		     const std::string &outcsv, float noise_line) :
 		gr::block("scanner_sink",
 			  gr::io_signature::make(1, 1, sizeof (float) * vector_length),
 			  gr::io_signature::make(0, 0, 0)),
@@ -55,7 +55,8 @@ public:
 		m_spread(spread), //minumum distance between radio signals (overlapping scans might produce slightly different frequencies)
 		m_time(ptime), //the amount of time to listen on the same frequency for
 		m_start_time(time(0)), //the start time of the scan (useful for logging/reporting/monitoring)
-		m_outcsv(NULL)
+		m_outcsv(NULL),
+        m_noise_line(noise_line)
 	{
 		/* testing start*/
 		// max_buffer = new float[m_vector_length];
@@ -64,7 +65,6 @@ public:
 		// }
 		/* testing end*/
 		/* testing start*/
-		noise_line = -44.0f;
 		/* testing end*/
 		m_source -> set_gain_mode(false);
 		m_source -> set_gain(30);
@@ -209,7 +209,15 @@ private:
 		float diffs[m_vector_length];//差[数学]
 		for (unsigned int i = 0; i < m_vector_length; ++i)
 			diffs[i] = bands1[i] - bands2[i];//bands2是粗滑动平均的结果,bands2[0]应该永远比bands1[0]大
-
+        
+        std::ofstream ofstream_diff("diff.txt");
+		if(ofstream_diff.is_open()){
+			for(unsigned int i=0;i<m_vector_length;i++){
+				ofstream_diff << diffs[i] << std::endl;
+			}
+		}
+		ofstream_diff.close();
+        
 		/* Look through to find signals */
 		//start with no signal found (note: diffs[0] should always be very negative because of the way the windowing function works)
 		bool sig = false;
@@ -234,11 +242,11 @@ private:
 						// max++;
 				   if (diffs[i] < m_threshold){
 					   unsigned int min = peak;
-					   while ((bands0[min] > noise_line) && (min > 0)){
+					   while ((bands0[min] > m_noise_line) && (min > 0)){
 						   min--;
 					   }   
 					   unsigned int max = peak;
-					   while ((bands0[max] > noise_line) && (max < m_vector_length - 1))
+					   while ((bands0[max] > m_noise_line) && (max < m_vector_length - 1))
 						 max++;
 					sig = false; //we're now in no signal state
 
@@ -259,7 +267,7 @@ private:
 		}
 	}
 	//看看这个信号是不是太靠近中心频率
-	bool TrySignal(double min, double max)
+	bool TrySignal(double max, double min)
 	{
 		double mid = (min + max) / 2.0; //calculate the midpoint of the signal
 
@@ -272,7 +280,10 @@ private:
 			if ((mid - signal < m_spread) && (signal - mid < m_spread)) //tpo close
 				return false; //if so, this is not a genuine hit
 		}//使用BOOST_FOREACH方便地迭代STL容器
-
+        
+        /* check if the bandwidth is too narrow(too close to noise line) */
+        if(max - min < 1000)
+            return false;
 		/* Genuine hit!:D */
 		m_signals.insert(mid); //add to the set of signals
 		return true; //genuine hit
@@ -357,12 +368,12 @@ private:
 	time_t m_start_time;
 	FILE *m_outcsv;
 	// float *max_buffer;
-	float noise_line;
+	float m_noise_line;
 };
 
 /* Shared pointer thing gnuradio is fond of */
 typedef boost::shared_ptr<scanner_sink> scanner_sink_sptr;
-scanner_sink_sptr make_scanner_sink(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1, double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2, double step, unsigned int avg_size, double spread, double threshold, double ptime, const std::string &outcsv)
+scanner_sink_sptr make_scanner_sink(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1, double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2, double step, unsigned int avg_size, double spread, double threshold, double ptime, const std::string &outcsv,float noise_line)
 {
-	return boost::shared_ptr<scanner_sink>(new scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, bandwidth0, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv));
+	return boost::shared_ptr<scanner_sink>(new scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, bandwidth0, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv, noise_line));
 }

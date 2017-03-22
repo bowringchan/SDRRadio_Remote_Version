@@ -31,6 +31,7 @@
 #include <gnuradio/blocks/complex_to_magphase.h>
 #include <gnuradio/filter/firdes.h>
 #include <gnuradio/filter/freq_xlating_fir_filter_ccf.h>
+#include <gnuradio/blocks/file_source.h>
 #include "mcs_judgement.hpp"
 #include <string>
 
@@ -48,9 +49,10 @@ public:
 		fft(gr::fft::fft_vcc::make(vector_length, true, window, false, 1)),
 		ctmp(gr::blocks::complex_to_magphase::make(vector_length)),
 		//blackman
-		fxff(gr::filter::freq_xlating_fir_filter_ccf::make(1,gr::filter::firdes::low_pass(1,bandwidth0,cutoff_freq,transition_width,(gr::filter::firdes::win_type)3),500000,bandwidth0)),
+		fxff(gr::filter::freq_xlating_fir_filter_ccf::make(1,gr::filter::firdes::low_pass(1,bandwidth0,cutoff_freq,transition_width,(gr::filter::firdes::win_type)3),700000,bandwidth0)),
 		sink(make_mcs_judgement(source, vector_length, centre_freq_1,bandwidth0,avg_size,phase_number)),
-		ctm(gr::blocks::complex_to_mag_squared::make(vector_length))
+		ctm(gr::blocks::complex_to_mag_squared::make(vector_length)),
+        file_source(gr::blocks::file_source::make(sizeof(float) * 2,"/home/bowring/Documents/GraduateWork/FM_FileSink_100Mhz",true))
 			 {
 				 /* Set up the OsmoSDR Source */
 				  source->set_sample_rate(m_bandwidth0);
@@ -63,7 +65,9 @@ public:
 				  }
 				  
 				/* Set up the connections */
-				  connect(source, 0, fxff, 0);
+                
+				//  connect(source, 0, fxff, 0);
+                  connect(file_source,0,fxff,0);
 				  connect(fxff, 0,stv, 0);
 				  connect(stv, 0, fft, 0);
 				  connect(fft, 0, ctm, 0);
@@ -111,4 +115,6 @@ private:
 	gr::filter::freq_xlating_fir_filter_ccf::sptr fxff;
 	mcs_judgement_sptr sink;
 	gr::blocks::complex_to_mag_squared::sptr ctm;
+    //File Source
+    gr::blocks::file_source::sptr file_source;
 };

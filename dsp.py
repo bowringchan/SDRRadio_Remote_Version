@@ -104,13 +104,14 @@ class SignalReceiver(gr.top_block):
     def set_FM_freq(self, new_center_freq):
         self.RTL_SDR_center_freq = new_center_freq
         self.rtlsdr_source_0.set_center_freq(new_center_freq)
+        print 'set_FM_freq: '+str(new_center_freq)
 
     def set_cutoff_freq(self, new_cutoff_freq):
         self.FM_cutoff_freq = new_cutoff_freq
         self.FM_transition_width = new_cutoff_freq / 4
         self.low_pass_filter_FM_0.set_taps(firdes.low_pass(
             1, self.samp_rate, self.FM_cutoff_freq, self.FM_transition_width, firdes.WIN_BLACKMAN, 6.76))
-        
+        print 'set_cutoff_freq: '+str(new_cutoff_freq)
 
 if __name__ == '__main__':
     tb = SignalReceiver()
