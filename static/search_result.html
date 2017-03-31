@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>软件定义无线电收音机</title>
+<script src="echarts.min.js"></script>
+<script>
+function processData(csv,noise_line) {
+      var allTextLines = csv.split(/\r\n|\n/);
+      var freqs = [];
+      var powers = [];
+      for (var i=0; i<allTextLines.length; i++) {
+            var data = allTextLines[i].split(',');
+            freqs.push(data[0]);
+            powers.push(data[1]);
+      }
+      display_chart(freqs,powers,noise_line);
+}
+
+function display_chart(freqs,powers,noise_line_number){
+        var noise_line = [];
+        for(i=0;i<freqs.length;i++){
+            noise_line.push(noise_line_number);
+        }
+    // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main'));
+
+        // 指定图表的配置项和数据
+        var option = {
+            title: {
+                text: '功率谱图'
+            },
+            tooltip: {},
+            legend: {
+                data:['功率','噪声线']
+            },
+            dataZoom: [
+                {
+                    id: 'dataZoomX',
+                    type: 'slider',
+                    xAxisIndex: [0],
+                    filterMode: 'empty'
+                },
+                {
+                    id: 'dataZoomY',
+                    type: 'slider',
+                    yAxisIndex: [0],
+                    filterMode: 'empty'
+                },
+                {
+                    id: 'dataZoomInside',
+                    type: 'inside'
+                }
+            ],
+            xAxis: {
+                name: 'Mhz',
+                data: freqs
+            },
+            yAxis: {name: 'dbFS'},
+            series: [{
+                name: '功率',
+                type: 'line',
+                data: powers
+            },
+            {
+                name: '噪声线',
+                type: 'line',
+                data: noise_line
+            }
+            ]
+        };
+
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+}
+
+function loadNoiseLine(csv){
+    var xmlresp;
+     xmlhttp=new XMLHttpRequest();
+     xmlhttp.onreadystatechange=function(){
+        if(xmlhttp.readyState==4 && xmlhttp.status==200)
+        {
+            noise_line = xmlhttp.responseText;
+            processData(csv,noise_line);
+        }
+    }
+    xmlhttp.open("GET","/ajax/noise_line/",true);
+    xmlhttp.send();
+}
+
+function loadPowerGraph(){
+     var xmlresp;
+     xmlhttp=new XMLHttpRequest();
+     xmlhttp.onreadystatechange=function(){
+        if(xmlhttp.readyState==4 && xmlhttp.status==200)
+        {
+            xmlresp = xmlhttp.responseText;
+            loadNoiseLine(xmlresp);
+        }
+    }
+    xmlhttp.open("GET","/ajax/power2display/",true);
+    xmlhttp.send();
+}
+
+function updateSrchRst(){
+    var tab = document.getElementById("searchresult");
+    var formdata_tab = new FormData();
+    for(i=1; i<tab.rows.length; i++){
+        formdata_tab.append(i,"<freq>"+tab.rows[i].cells[0].innerHTML+"</freq>"+"<bandwidth>"+tab.rows[i].cells[1].innerHTML+"</bandwidth>"
+        );
+    }
+    var oReq = new XMLHttpRequest();
+    oReq.open("POST", "/updtsrch", true);
+    oReq.onload = function(oEvent) {
+        if (oReq.status == 200) {
+            alert("节目列表更新成功");
+        }
+    };
+    oReq.send(formdata_tab);
+}
+
+function editableTD(event){
+    var tdx = event.target;
+    var tdx_innerHTML = tdx.innerHTML;
+    var tdx_input  = document.createElement("input")
+    tdx_input.type = "text";
+    tdx_input.value = tdx_innerHTML;
+    tdx.innerHTML = "";
+    tdx_input.onblur = textTD;
+    tdx.appendChild(tdx_input);
+    tdx_input.focus();
+}
+
+//call from childNode
+function textTD(event){
+    var tdx_input = event.target;
+    var tdx = tdx_input.parentNode;
+    var tdx_innerHTML = tdx_input.value;
+    tdx.removeChild(tdx_input);
+    tdx.innerHTML = tdx_innerHTML;
+}
+
+function loadSearchResult(){
+   var tab = document.getElementById("searchresult");
+   var rowIndex = tab.rows.length+1;
+
+   var xmlresp;
+   xmlhttp=new XMLHttpRequest();
+   xmlhttp.onreadystatechange=function()
+  {
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+    {
+      xmlresp=xmlhttp.responseXML;
+      x=xmlresp.getElementsByTagName("program");
+      for(i=0; i<x.length; i++){
+         //插入一行
+        var tr  = tab.insertRow();
+        var td1 = tr.insertCell();
+        var td2 = tr.insertCell();
+        var td3 = tr.insertCell();
+         
+        td1.innerHTML = x[i].childNodes[0].firstChild.nodeValue;
+        td2.innerHTML = x[i].childNodes[1].firstChild.nodeValue;
+        td3.innerHTML = x[i].childNodes[2].firstChild.nodeValue;
+        
+        td1.onclick = editableTD;
+        td2.onclick = editableTD;
+        td3.onclick = editableTD;
+      }
+      loadPowerGraph();
+    }
+  }
+   xmlhttp.open("GET","/ajax/search_result/",true);
+   xmlhttp.send();
+  
+}
+window.onload=function(){
+    loadSearchResult();
+}
+window.onunload=function(){
+}
+
+</script>
+<style>
+ul#nav{ width:100%; height:60px; background:#00A2CA;text-align:center;margin:0 auto} 
+ul#nav li{display:inline; height:60px} 
+ul#nav li a{display:inline-block; padding:0 20px; height:60px; line-height:60px; color:#FFF; font-size:16px;text-decoration:none;} 
+ul#nav li a:hover{background:#0095BB} 
+table#searchresult{width:80%;margin:0 auto}
+footer#ft{width:100%;text-align:center;margin:0 auto;position:absolute;bottom:0;}
+input{display:inline;text-align:center;}
+.wrapper{text-align:center;}
+button#updtsrchrst{margin:0 auto;}
+#main{width: 600px;height:400px;margin:0 auto;}
+</style>
+</head>
+
+<body>
+<ul id="nav">
+<li><a href="/">节目列表</a></li>
+<li><a href="/autosrch/">自动搜台</a></li>
+</ul>
+<div class="wrapper">
+<div id="main"></div>
+<table id="searchresult" border="1">
+<th>频率(hz)</th>
+<th>带宽(hz)</th>
+<th>峰值(dbFS)</th>
+</table>
+<button onclick="updateSrchRst()" id="updtsrchrst">确定</button>
+</div>
+</body>
+</html>

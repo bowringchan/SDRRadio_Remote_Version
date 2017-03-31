@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>软件定义无线电收音机</title>
+<script src="hls.min.js"></script>
+<script>
+var hls;
+var video;
+function sleep (time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+function timeAlert(){
+  var pelement = document.getElementById("TimeAlert");
+  var start_feq = document.getElementById("start_freq");
+  var stop_req = document.getElementById("stop_freq");
+  var time_needed = 5 + parseFloat(stop_freq.value) - parseFloat(start_feq.value) +1;
+  pelement.innerHTML = "请稍等，这大约需要" + time_needed+"秒,不可离开本页面";
+  submit_button = document.getElementById("submit_button");
+  submit_button.disabled = true;
+  return true;
+}
+
+</script>
+<style>
+body{position:relative;}
+ul#nav{ width:100%; height:60px; background:#00A2CA;text-align:center;margin:0 auto} 
+ul#nav li{display:inline; height:60px} 
+ul#nav li a{display:inline-block; padding:0 20px; height:60px; line-height:60px; color:#FFF; font-size:16px;text-decoration:none;} 
+ul#nav li a:hover{background:#0095BB}
+.formbody{text-align:center}
+</style>
+</head>
+
+<body>
+<ul id="nav">
+<li><a href="/">节目列表</a></li>
+<li><a href="/autosrch/">自动搜台</a></li>
+</ul>
+<div class="formbody">
+<form name = "search_config" action="/startsrch" method="POST" onsubmit="return timeAlert()">
+噪声阈值(dbFS)<input type="text" name="noise_line" value="-40"><br>
+起始频率(Mhz)<input type="text" name="start_freq" value="100" id="start_freq"/><br>
+截止频率(Mhz)<input type="text" name="stop_freq" value="100" id="stop_freq"/><br>
+<input type="submit" value="开始搜台" id="submit_button"/>
+</form>
+<p id="TimeAlert"></p>
+</div>
+</body>
+</html>

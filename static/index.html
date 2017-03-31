@@ -20,12 +20,18 @@ function sleep (time) {
 }
 
 var clickEventExpression=function(theUrl,play_button){  
-    return function(){  
-        httpGetAsync(theUrl);
+    return function(){
+        var default_mod_bandwidth = document.getElementById("default_mod_bandwidth");
+        if(default_mod_bandwidth.checked == true){
+            var theUrl_default = theUrl.replace(/(?![?&])(bandwidth)=\w+/gi,"bandwidth=0");
+            httpGetAsync(theUrl_default);
+        }else{
+            httpGetAsync(theUrl);
+        }
         play_button.innerHTML = "加载"
         unloadHls();
         //sleep for 1*3*1000 = 3 seconds wait for new .ts arrived
-        sleep(4000).then(() => {
+        sleep(5000).then(() => {
         loadHls();
         video.play();
         play_button.innerHTML = "播放"
@@ -51,11 +57,10 @@ function loadProgramList(){
         var td2 = tr.insertCell();
         var td3 = tr.insertCell();
         var td4 = tr.insertCell();
-         
         td1.innerHTML = x[i].childNodes[0].firstChild.nodeValue;
         td2.innerHTML = x[i].childNodes[1].firstChild.nodeValue;
         td3.innerHTML = x[i].childNodes[2].firstChild.nodeValue;
-        var play_button = document.createElement("button"); 
+        var play_button = document.createElement("button");
         play_button_href = "/frequency?freq="+x[i].childNodes[0].firstChild.nodeValue+"&bandwidth="+x[i].childNodes[1].firstChild.nodeValue;
         play_button.onclick = clickEventExpression(play_button_href, play_button);
         play_button.innerHTML = "播放";
@@ -125,24 +130,24 @@ function unloadHls(){
 }
 </script>
 <style>
+body{position:relative;}
 ul#nav{ width:100%; height:60px; background:#00A2CA;text-align:center;margin:0 auto} 
 ul#nav li{display:inline; height:60px} 
 ul#nav li a{display:inline-block; padding:0 20px; height:60px; line-height:60px; color:#FFF; font-size:16px;text-decoration:none;} 
 ul#nav li a:hover{background:#0095BB} 
 table#programlist{width:80%;text-align:center;margin:0 auto}
-footer#ft{width:100%;text-align:center;margin:0 auto;position:absolute;bottom:0;}
+footer#ft{width:100%;text-align:center;margin:0 auto;position:absolute;}
 </style>
 </head>
 
 <body>
 <ul id="nav">
-<li><a href="/prglst/">节目列表</a></li>
+<li><a href="/">节目列表</a></li>
 <li><a href="/autosrch/">自动搜台</a></li>
-<li><a href="/logout/">登出</a></li>
 </ul>
 <table id="programlist" border="1">
 <th>频率(hz)</th>
-<th>带宽(hz)</th>
+<th>带宽(hz)(<label><input name="default_mod_bandwidth" type="checkbox" value="" id="default_mod_bandwidth"/>制式带宽</label>)</th>
 <th>调制方式</th>
 <th>播放</th>
 </table>

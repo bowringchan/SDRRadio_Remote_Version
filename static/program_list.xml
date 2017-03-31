@@ -1,5 +1,6 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <program_list>
-<program id="pg_1"><freq>100700000</freq><bandwidth>150000</bandwidth><mcs>FM</mcs></program>
-<program id="pg_2"><freq>105600000</freq><bandwidth>150000</bandwidth><mcs>FM</mcs></program>
+<program><freq>100691000</freq><bandwidth>74000</bandwidth><mcs>FM</mcs></program>
+<program><freq>103380496</freq><bandwidth>59000</bandwidth><mcs>FM</mcs></program>
+<program><freq>105597000</freq><bandwidth>100000</bandwidth><mcs>FM</mcs></program>
 </program_list>

@@ -17,7 +17,7 @@ class Batch_Encoder:
 
     def encode_ffmpeg_fifo(self, encoder_ready):
         #subprocess.call("ffmpeg -loop 1 -i image.jpg -f u8 -ar 48000 -channels 1 -i audio/filesink.raw -c:v libx264 -tune stillimage -pix_fmt yuv420p -ac 2 -c:a aac -f hls -hls_time 3 -hls_list_size 5 -hls_segment_filename 'audio%03d.ts' RTLSDR.m3u8",shell = True)
-        ffmpeg_p = subprocess.Popen('exec '+"ffmpeg -f u8 -ar 48000 -channels 1 -i ../audio/filesink.raw -c:a aac -f hls -hls_flags omit_endlist -hls_time "+str(self.EXTINF)+" -hls_list_size 3 -hls_segment_filename 'audio%03d.ts' RTLSDR.m3u8 -v 0", shell=True,cwd = os.getcwd()+'/static')
+        ffmpeg_p = subprocess.Popen('exec '+"ffmpeg -f u8 -ar 48000 -channels 1 -i ../audio/filesink.raw -c:a aac -f hls -hls_flags omit_endlist -hls_time "+str(self.EXTINF)+" -hls_list_size 3 -hls_segment_filename 'audio%03d.ts' RTLSDR.m3u8", shell=True,cwd = os.getcwd()+'/static')
         encoder_ready[0] = 1
         while True:
             if self.thread_running == True:

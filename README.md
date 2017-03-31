@@ -10,6 +10,8 @@
 	GNURadio 3.7.10 64bit(gqrx2.6 compiled)
 	gr-osmosdr 0.1.5git
 	libfftw3 3.3.3-7 Ubuntu3
+    hls.js
+    echarts.js
 		
 ---------------------------
 	This is my graduation project. Hope to share it with the open source world as a gift. Lol

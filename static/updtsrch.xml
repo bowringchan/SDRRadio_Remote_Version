@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program_list><program><freq>1409500</freq><bandwidth>17000</bandwidth><mcs>FM</mcs></program>
+<program><freq>1537500</freq><bandwidth>13000</bandwidth><mcs>FM</mcs></program>
+<program><freq>1737000</freq><bandwidth>54000</bandwidth><mcs>FM</mcs></program>
+<program><freq>1807500</freq><bandwidth>15000</bandwidth><mcs>FM</mcs></program>
+<program><freq>1872000</freq><bandwidth>16000</bandwidth><mcs>FM</mcs></program>
+<program><freq>2125000</freq><bandwidth>34000</bandwidth><mcs>FM</mcs></program>
+<program><freq>2500500</freq><bandwidth>39000</bandwidth><mcs>FM</mcs></program>
+</program_list>
