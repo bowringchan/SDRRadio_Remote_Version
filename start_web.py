@@ -125,7 +125,10 @@ def web_set_frequency():
     freq = float(request.args.get('freq'))
     cutoff = float(request.args.get('bandwidth'))/2
     if cutoff<1000.0:
-        cutoff = float(75000.0)
+        if config_storage['hardware_mode']=='UV':
+            cutoff = float(75000.0)
+        else:
+            cutoff = float(7000.0)
     asc.set_dsp_command({"freq":[freq,cutoff]})
     return ('',200)
 
@@ -139,6 +142,8 @@ def web_start_search():
     noise_line = search_config_form['noise_line']
     start_freq = search_config_form['start_freq']
     stop_freq = search_config_form['stop_freq']
+    if float(start_freq)<1.0 or float(stop_freq)<1.0 or float(start_freq)>float(stop_freq):
+        return ('Invalid Frequency Search Range',503)
     config_storage['noise_line'] = noise_line;
     #release RTL dongle
     asc.thread_running = False
