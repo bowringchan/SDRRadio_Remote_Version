@@ -6,6 +6,7 @@ import threading
 import audio_stream
 import atexit
 import os
+import sys
 import signal
 from time import sleep
 import subprocess
@@ -18,6 +19,7 @@ app = Flask(__name__)
 app.config["CACHE_TYPE"] = "null"
 # turn on audio stream controller
 asc = None
+#{'noise_line':-40,'hardware_mode':'UV'}
 config_storage = {}
 
 def shutdown_server():
@@ -42,6 +44,18 @@ def compare_freq_str(x, y):
     intx = int(re.match(pat,x).group(1))
     inty = int(re.match(pat,y).group(1))
     return 1 if intx>inty else -1
+
+def status_recode(status):
+    f = open('status.config','r')
+    line = f.readline()
+    f.close()
+    if line == status:
+        config_storage['changemode'] = False
+    else:
+        config_storage['changemode'] = True
+        f = open('status.config','w')
+        f.write(status)
+        f.close()
 
 def check_auth(username, password):
     """This function is called to check if a username /
@@ -80,7 +94,11 @@ def add_header(r):
 @app.route('/')
 @requires_auth
 def web_root():
-	return redirect("static/index.html")
+    if config_storage['changemode']==True:
+        config_storage['changemode'] = False
+        return redirect("static/search_config.html")
+    else:
+        return redirect("static/index.html")
 
 @app.route('/autosrch/')
 @requires_auth
@@ -128,10 +146,13 @@ def web_start_search():
     sleep(2)
     subprocess.call(["sudo","sh","clean.sh"])
     #call gr-scan to search
-    subprocess.call(["sudo","./gr-scan/gr-scan","-x",start_freq,"-y",stop_freq,"-n",noise_line,"-o","static/search_result.xml"])
+    if config_storage['hardware_mode']=='UV':
+        subprocess.call(["sudo","./gr-scan/gr-scan","-x",start_freq,"-y",stop_freq,"-n",noise_line,"-m","0","-o","static/search_result.xml"])
+    else:
+        subprocess.call(["sudo","./gr-scan/gr-scan","-x",str(float(start_freq)+100.0),"-y",str(float(stop_freq)+100.0),"-n",noise_line,"-t","5","-f","3","-s","6","-m","1","-o","static/search_result.xml"])
     #restarting
     asc.thread_running = True
-    asc_thread = threading.Thread(target=asc.main)
+    asc_thread = threading.Thread(target=asc.main, args=(config_storage['hardware_mode'],))
     asc_thread.start()
     sleep(2)#buffering live stream
     return redirect('static/search_result.html',303)
@@ -143,7 +164,7 @@ def web_update_search_result():
     f = open('static/program_list.xml','w')
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n<program_list>\n')
     for line in search_result:
-        f.write('<program>'+line+'<mcs>FM</mcs>'+'</program>\n')
+        f.write('<program>'+line+'</program>\n')
     f.write('</program_list>')
     f.flush()
     f.close()
@@ -151,10 +172,14 @@ def web_update_search_result():
     return ('',200)
 
 if __name__ == '__main__':
-    #atexit.register(close_running_threads)
+    if len(sys.argv) == 1:
+        config_storage['hardware_mode'] = 'UV'
+    else:
+        config_storage['hardware_mode'] = sys.argv[1]
+    status_recode(config_storage['hardware_mode'])
     signal.signal(signal.SIGINT, close_running_threads)
     asc = audio_stream.audio_stream_controller()
-    asc_thread = threading.Thread(target=asc.main)
+    asc_thread = threading.Thread(target=asc.main, args=(config_storage['hardware_mode'],))
     asc_thread.start()
     print 'asc_thread started'
     app.run(host='0.0.0.0',port=80)

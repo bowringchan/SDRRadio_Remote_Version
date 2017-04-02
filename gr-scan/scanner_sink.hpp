@@ -36,7 +36,7 @@ public:
 	scanner_sink(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1,
 		     double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2,
 		     double step, unsigned int avg_size, double spread, double threshold, double ptime,
-		     const std::string &outcsv, float noise_line) :
+		     const std::string &outcsv, float noise_line, int freq_shift):
 		gr::block("scanner_sink",
 			  gr::io_signature::make(1, 1, sizeof (float) * vector_length),
 			  gr::io_signature::make(0, 0, 0)),
@@ -57,7 +57,8 @@ public:
 		m_time(ptime), //the amount of time to listen on the same frequency for
 		m_start_time(time(0)), //the start time of the scan (useful for logging/reporting/monitoring)
 		m_outcsv(NULL),
-        m_noise_line(noise_line)
+        m_noise_line(noise_line),
+        m_freq_shift(freq_shift)
 	{
 		/* testing start*/
 		// max_buffer = new float[m_vector_length];
@@ -129,9 +130,16 @@ private:
 		/* testing start*/
 		std::ofstream ofstream_power("static/power2display.csv",std::ofstream::out|std::ofstream::app);
 		if(ofstream_power.is_open()){
-			for(unsigned int i=0;i<m_vector_length;i++){
-				ofstream_power << freqs[i]/1000000<<","<< bands0[i] << std::endl;
-			}
+            std::cout<<m_freq_shift<<std::endl;
+            if(m_freq_shift<=0.1){
+                for(unsigned int i=0;i<m_vector_length;i++){
+                    ofstream_power << freqs[i]/1000000<<","<< bands0[i] << std::endl;
+                }
+            }else{
+                for(unsigned int i=0;i<m_vector_length;i++){
+                    ofstream_power << (freqs[i]-100000000)/1000000<<","<< bands0[i] << std::endl;
+                }
+            }
 		}
 		ofstream_power.close();
 		/* testing end*/
@@ -356,10 +364,14 @@ private:
 	}
     
     void WriteXML(float freq, float width, float peak){
-        fprintf(m_outcsv, "<program><freq>%.0f</freq><bandwidth>%.0f</bandwidth><peak>%f</peak></program>\n", freq, width, peak);
-        fflush(m_outcsv);
+        if(m_freq_shift<0.1){
+            fprintf(m_outcsv, "<program><freq>%.0f</freq><bandwidth>%.0f</bandwidth><peak>%f</peak><mcs>FM</mcs></program>\n", freq, width, peak);
+            fflush(m_outcsv);
+        }else{
+            fprintf(m_outcsv, "<program><freq>%.0f</freq><bandwidth>%.0f</bandwidth><peak>%f</peak><mcs>AM</mcs></program>\n", freq - 100000000, width, peak);
+            fflush(m_outcsv);
+        } 
     }
-
 	std::set<double> m_signals;
 	osmosdr::source::sptr m_source;
 	float *m_buffer;
@@ -380,11 +392,12 @@ private:
 	FILE *m_outcsv;
 	// float *max_buffer;
 	float m_noise_line;
+    float m_freq_shift;
 };
 
 /* Shared pointer thing gnuradio is fond of */
 typedef boost::shared_ptr<scanner_sink> scanner_sink_sptr;
-scanner_sink_sptr make_scanner_sink(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1, double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2, double step, unsigned int avg_size, double spread, double threshold, double ptime, const std::string &outcsv,float noise_line)
+scanner_sink_sptr make_scanner_sink(osmosdr::source::sptr source, unsigned int vector_length, double centre_freq_1, double centre_freq_2, double bandwidth0, double bandwidth1, double bandwidth2, double step, unsigned int avg_size, double spread, double threshold, double ptime, const std::string &outcsv,float noise_line,int freq_shift)
 {
-	return boost::shared_ptr<scanner_sink>(new scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, bandwidth0, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv, noise_line));
+	return boost::shared_ptr<scanner_sink>(new scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, bandwidth0, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv, noise_line, freq_shift));
 }

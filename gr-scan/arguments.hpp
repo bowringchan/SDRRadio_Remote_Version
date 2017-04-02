@@ -36,7 +36,8 @@ public:
 		fft_width(1000.0),
 		step(-1.0),
 		ptime(1.0),
-        noise_line(-40.0f)
+        noise_line(-40.0f),
+        freq_shift(0)
 	{
 		argp_parse (&argp_i, argc, argv, 0, 0, this);
 	}
@@ -115,6 +116,10 @@ public:
     float get_noise_line(){
         return noise_line;
     }
+    
+    int get_freq_shift(){
+        return freq_shift;
+    }
 
 private:
 	static error_t s_parse_opt(int key, char *arg, struct argp_state *state)
@@ -168,6 +173,8 @@ private:
 			break;
         case 'n':
             noise_line = atof(arg); //dbFS
+        case 'm':
+            freq_shift = atoi(arg); //freq_shift, all output - 100Mhz, not working on input.
 		case ARGP_KEY_ARG:
 			if (state->arg_num > 0)
 				argp_usage(state);
@@ -197,6 +204,7 @@ private:
 	std::string outcsv;
 	std::string device_args;
     float noise_line;
+    int freq_shift;
 };
 
 argp_option Arguments::options[] = {
@@ -214,6 +222,7 @@ argp_option Arguments::options[] = {
 	{"output-csv", 'o', "OUTCSV", 0, "Output results to CSV file (default: [none])"},
 	{"device-args", 'd', "DEVICEARGS", 0, "Device arguments for OsmoSDR (default: [none])"},
     {"noise-line", 'n', "dbFS", 0, "noise-line for OsmoSDR Power Spectrum"},
+    {"mode", 'm', "Integer", 0, "0 for UV, 1 for HF"},
 	{0}
 };
 

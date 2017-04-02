@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <program_list>
-<program><freq>100691000</freq><bandwidth>74000</bandwidth><mcs>FM</mcs></program>
-<program><freq>103380496</freq><bandwidth>59000</bandwidth><mcs>FM</mcs></program>
-<program><freq>105597000</freq><bandwidth>100000</bandwidth><mcs>FM</mcs></program>
+<program><freq>6374000</freq><bandwidth>40000</bandwidth><mcs>AM</mcs></program>
+<program><freq>6994000</freq><bandwidth>38000</bandwidth><mcs>AM</mcs></program>
+<program><freq>7726496</freq><bandwidth>5000</bandwidth><mcs>AM</mcs></program>
 </program_list>

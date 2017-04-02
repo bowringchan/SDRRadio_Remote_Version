@@ -19,15 +19,14 @@ class SignalReceiver(gr.top_block):
         # Variables for FM and AM
         # FM
         self.samp_rate = 2e6
-        self.RTL_SDR_center_freq = 100.7e6
+        self.RTL_SDR_center_freq = 107.382e6
 
         self.FM_cutoff_freq = 75e3
         self.FM_transition_width = 25e3
         # AM
         # TODO: FROM HERE
-        self.AirAM_cutoff_freq = 7e3
-        self.AirAM_transition_width = 15e2
-        self.AirAM_default_Volume = 50
+        self.AM_cutoff_freq = 7e3
+        self.AM_transition_width = 15e2
         self.demodulation_scheme = 'FM'
 
         # Setting Blocks
@@ -61,7 +60,15 @@ class SignalReceiver(gr.top_block):
         )
 
         # AM
-
+        self.low_pass_filter_AM_0 = filter.fir_filter_ccf(4, firdes.low_pass(
+        	1, self.samp_rate, self.AM_cutoff_freq, self.AM_transition_width, firdes.WIN_BLACKMAN, 6.76))
+        self.blocks_complex_to_mag_AM_0 = blocks.complex_to_mag(1)
+        self.rational_resampler_AM_0 = filter.rational_resampler_fff(
+                interpolation=48,
+                decimation=500,
+                taps=None,
+                fractional_bw=None,
+        )
         #FileSink
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vff((128,))
         self.blocks_float_to_uchar_0 = blocks.float_to_uchar()
@@ -106,12 +113,41 @@ class SignalReceiver(gr.top_block):
         self.rtlsdr_source_0.set_center_freq(new_center_freq)
         print 'set_FM_freq: '+str(new_center_freq)
 
-    def set_cutoff_freq(self, new_cutoff_freq):
+    def set_AM_freq(self, new_center_freq):
+        self.RTL_SDR_center_freq = new_center_freq
+        self.rtlsdr_source_0.set_center_freq(new_center_freq)
+
+    def set_FM_cutoff_freq(self, new_cutoff_freq):
         self.FM_cutoff_freq = new_cutoff_freq
         self.FM_transition_width = new_cutoff_freq / 4
         self.low_pass_filter_FM_0.set_taps(firdes.low_pass(
             1, self.samp_rate, self.FM_cutoff_freq, self.FM_transition_width, firdes.WIN_BLACKMAN, 6.76))
         print 'set_cutoff_freq: '+str(new_cutoff_freq)
+
+    def set_AM_cutoff_freq(self, new_cutoff_freq):
+        self.AM_cutoff_freq = new_cutoff_freq
+        self.AM_transition_width = new_cutoff_freq / 2
+        self.low_pass_filter_AM_0.set_taps(firdes.low_pass(
+            1, self.samp_rate, self.AM_cutoff_freq, self.AM_transition_width, firdes.WIN_BLACKMAN, 6.76))
+        print 'set_cutoff_freq: '+str(new_cutoff_freq)
+
+    def connect_AM_blocks_filesink(self):
+        self.connect((self.rtlsdr_source_0, 0),(self.low_pass_filter_AM_0, 0))
+        self.connect((self.low_pass_filter_AM_0, 0),(self.blocks_complex_to_mag_AM_0,0))
+        self.connect((self.blocks_complex_to_mag_AM_0,0),(self.rational_resampler_AM_0,0))
+        self.connect((self.rational_resampler_AM_0, 0), (self.blocks_multiply_const_vxx_0, 0))
+        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.blocks_add_const_vxx_0, 0))
+        self.connect((self.blocks_add_const_vxx_0, 0), (self.blocks_float_to_uchar_0, 0))
+        self.connect((self.blocks_float_to_uchar_0, 0), (self.blocks_file_sink_0, 0))
+    
+    def disconnect_AM_blocks_filesink(self):
+        self.disconnect((self.rtlsdr_source_0, 0),(self.low_pass_filter_AM_0, 0))
+        self.disconnect((self.low_pass_filter_AM_0, 0),(self.blocks_complex_to_mag_AM_0,0))
+        self.disconnect((self.blocks_complex_to_mag_AM_0,0),(self.rational_resampler_AM_0,0))
+        self.disconnect((self.rational_resampler_AM_0, 0), (self.blocks_multiply_const_vxx_0, 0))
+        self.disconnect((self.blocks_multiply_const_vxx_0, 0), (self.blocks_add_const_vxx_0, 0))
+        self.disconnect((self.blocks_add_const_vxx_0, 0), (self.blocks_float_to_uchar_0, 0))
+        self.disconnect((self.blocks_float_to_uchar_0, 0), (self.blocks_file_sink_0, 0))
 
 if __name__ == '__main__':
     tb = SignalReceiver()

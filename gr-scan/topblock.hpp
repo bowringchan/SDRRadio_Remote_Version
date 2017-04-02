@@ -38,7 +38,7 @@ public:
 		 double fft_width, double bandwidth1, double bandwidth2,
 		 double step, unsigned int avg_size, double spread,
 		 double threshold, double ptime, const std::string &outcsv,
-		 const std::string &device_args, float noise_line):
+		 const std::string &device_args, float noise_line, int freq_shift):
 		gr::top_block("Top Block"),
 		vector_length(sample_rate / fft_width),
 		window(GetWindow(vector_length)),
@@ -50,7 +50,7 @@ public:
 		iir(gr::filter::single_pole_iir_filter_ff::make(1.0, vector_length)),
 		lg(gr::blocks::nlog10_ff::make(10, vector_length, -10 * std::log10(float(vector_length)) -10 * std::log10(float(GetWindowPower() / vector_length)))),/* -10 * std::log10 , Bug Fixed */
 		/* Sink - this does most of the interesting work */
-		sink(make_scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, sample_rate, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv, noise_line)),
+		sink(make_scanner_sink(source, vector_length, centre_freq_1, centre_freq_2, sample_rate, bandwidth1, bandwidth2, step, avg_size, spread, threshold, ptime, outcsv, noise_line,freq_shift)),
         file_source(gr::blocks::file_source::make(sizeof(float) * 2,"/home/bowring/Documents/GraduateWork/FM_FileSink_100Mhz",true))
 	{
 		/* Set up the OsmoSDR Source */

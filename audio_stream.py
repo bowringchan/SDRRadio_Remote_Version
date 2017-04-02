@@ -14,9 +14,12 @@ class audio_stream_controller:
         self.encoder_ready = [0]
 
 
-    def dsp_trigger(self,fifo_filename,que):
+    def dsp_trigger(self,fifo_filename,que,hardware_mode):
         tb = dsp.SignalReceiver(fifo_filename)
-        tb.connect_FM_blocks_filesink()
+        if hardware_mode=='UV':
+            tb.connect_FM_blocks_filesink()
+        else:
+            tb.connect_AM_blocks_filesink()
         print 'tb going to start\n'
         tb.start()
         while True:
@@ -26,15 +29,20 @@ class audio_stream_controller:
                 commands_dict = que.get()
                 for k in commands_dict:
                     if k == "freq":
-                        tb.set_FM_freq(commands_dict[k][0])
-                        tb.set_cutoff_freq(commands_dict[k][1])
-                        print 'Set Freq:'+str(commands_dict[k][0])+'bandwidth:'+str(commands_dict[k][1]*2)
+                        if hardware_mode=='UV':
+                            tb.set_FM_freq(commands_dict[k][0])
+                            tb.set_FM_cutoff_freq(commands_dict[k][1])
+                            print 'Set Freq:'+str(commands_dict[k][0])+'bandwidth:'+str(commands_dict[k][1]*2)
+                        else:
+                            #Hardware have a upconverter 100Mhz, thus 1.1Mhz actually 
+                            tb.set_AM_freq(commands_dict[k][0] + 100e6)
+                            tb.set_AM_cutoff_freq(commands_dict[k][1])
 
     #command: dict{"k":"v"}
     def set_dsp_command(self,command):
         self.que.put(command)
 
-    def main(self):
+    def main(self, hardware_mode):
         fifo_filename = 'audio/filesink.raw'
         fifo_tool_i = fifo_tool.Fifo_Generator()
         fifo_tool_i.mkfifo_file(fifo_filename, 0644)
@@ -60,7 +68,7 @@ class audio_stream_controller:
             sleep(1);
         print 'encoder_ready\n'
         self.que = multiprocessing.Queue()
-        p = multiprocessing.Process(target=self.dsp_trigger, args=(fifo_filename,self.que))
+        p = multiprocessing.Process(target=self.dsp_trigger, args=(fifo_filename,self.que,hardware_mode))
         p.start()
         while True:
             if self.thread_running == True:

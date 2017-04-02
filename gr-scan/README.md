@@ -35,3 +35,4 @@ FM和AM不同之处
 2.top_block:File_Sink 不同
 3.arguments:Thresold FM:3.0 AM:5.0
 4.scanner_sink:try_signal 可以通过spread区分。FM:50khz AM:6khz(2/3的一半/带宽)
+5. -m 1 可以使得所有输出-100Mhz。这作用于使用Upconverter实现HF频段接收的RTLSDR盒子
