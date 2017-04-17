@@ -177,7 +177,6 @@ function hidden_row(event){
 
 function loadSearchResult(){
    var tab = document.getElementById("searchresult");
-   var rowIndex = tab.rows.length+1;
 
    var xmlresp;
    xmlhttp=new XMLHttpRequest();
@@ -213,6 +212,30 @@ function loadSearchResult(){
    xmlhttp.send();
   
 }
+
+function add_new_row()
+{
+   var tab = document.getElementById("searchresult");
+   var tr  = tab.insertRow();
+        var td1 = tr.insertCell();
+        var td2 = tr.insertCell();
+        var td3 = tr.insertCell();
+        var td4 = tr.insertCell();
+        var td5 = tr.insertCell();
+        td1.innerHTML = "100000000";
+        td2.innerHTML = "100000";
+        td3.innerHTML = "-40.000000";
+        if(tab.rows.length>2)//序号为0的行为表格头，总行数1，序号为1的行为第一行，行数2。
+            td4.innerHTML = x[0].childNodes[3].firstChild.nodeValue;
+        else
+            td4.innerHTML = "";
+        td5.innerHTML = "X"
+        td1.onclick = editableTD;
+        td2.onclick = editableTD;
+        td3.onclick = editableTD;
+        td5.onclick = hidden_row;
+}
+
 window.onload=function(){
     loadSearchResult();
 }
@@ -251,6 +274,7 @@ button#updtsrchrst{margin:0 auto;}
 <th>调制方案</th>
 <th>删除</th>
 </table>
+<button onclick="add_new_row()">添加行</button>
 <button onclick="updateSrchRst()" id="updtsrchrst">确定</button>
 </div>
 </body>
