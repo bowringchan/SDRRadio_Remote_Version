@@ -78,9 +78,13 @@ function loadNoiseLine(csv){
     var xmlresp;
      xmlhttp=new XMLHttpRequest();
      xmlhttp.onreadystatechange=function(){
-        if(xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            noise_line = xmlhttp.responseText;
+        if(xmlhttp.status==500||(xmlhttp.readyState==4 && xmlhttp.status==200))
+        {   
+            if(xmlhttp.status==500)
+                noise_line = "-40";       
+            else{
+                noise_line = xmlhttp.responseText; 
+            }
             processData(csv,noise_line);
         }
     }
@@ -106,7 +110,8 @@ function updateSrchRst(){
     var tab = document.getElementById("searchresult");
     var formdata_tab = new FormData();
     for(i=1; i<tab.rows.length; i++){
-        formdata_tab.append(i,"<freq>"+tab.rows[i].cells[0].innerHTML+"</freq>"+"<bandwidth>"+tab.rows[i].cells[1].innerHTML+"</bandwidth>"+"<mcs>"+tab.rows[i].cells[3].innerHTML+"</mcs>"
+        if(tab.rows[i].hidden==false)
+            formdata_tab.append(i,"<freq>"+tab.rows[i].cells[0].innerHTML+"</freq>"+"<bandwidth>"+tab.rows[i].cells[1].innerHTML+"</bandwidth>"+"<mcs>"+tab.rows[i].cells[3].innerHTML+"</mcs>"
         );
     }
     var oReq = new XMLHttpRequest();
@@ -131,6 +136,31 @@ function editableTD(event){
     tdx_input.focus();
 }
 
+function start_filter(){
+    var input_bandwidth = document.getElementById("input_bandwidth");
+    var input_bandwidth_value = input_bandwidth.value;
+    var input_peakpower = document.getElementById("input_peakpower");
+    var input_peakpower_value = input_peakpower.value;
+    var tab = document.getElementById("searchresult");
+    for(i=1; i<tab.rows.length; i++){
+        if(parseFloat(tab.rows[i].cells[1].innerHTML)<=(1000*parseFloat(input_bandwidth_value))||parseFloat(tab.rows[i].cells[2].innerHTML)<=parseFloat(input_peakpower_value))
+            tab.rows[i].hidden=true;
+    }
+    
+}
+
+function recover_filter(){
+    var input_bandwidth = document.getElementById("input_bandwidth");
+    var input_bandwidth_value = input_bandwidth.value;
+    var input_peakpower = document.getElementById("input_peakpower");
+    var input_peakpower_value = input_peakpower.value;
+    var tab = document.getElementById("searchresult");
+    for(i=1; i<tab.rows.length; i++){
+            tab.rows[i].hidden=false;
+    }
+    
+}
+
 //call from childNode
 function textTD(event){
     var tdx_input = event.target;
@@ -138,6 +168,11 @@ function textTD(event){
     var tdx_innerHTML = tdx_input.value;
     tdx.removeChild(tdx_input);
     tdx.innerHTML = tdx_innerHTML;
+}
+
+function hidden_row(event){
+    var target_row=event.target.parentNode;
+    target_row.hidden=true;
 }
 
 function loadSearchResult(){
@@ -159,15 +194,17 @@ function loadSearchResult(){
         var td2 = tr.insertCell();
         var td3 = tr.insertCell();
         var td4 = tr.insertCell();
+        var td5 = tr.insertCell();
          
         td1.innerHTML = x[i].childNodes[0].firstChild.nodeValue;
         td2.innerHTML = x[i].childNodes[1].firstChild.nodeValue;
         td3.innerHTML = x[i].childNodes[2].firstChild.nodeValue;
         td4.innerHTML = x[i].childNodes[3].firstChild.nodeValue;
-        
+        td5.innerHTML = "X"
         td1.onclick = editableTD;
         td2.onclick = editableTD;
         td3.onclick = editableTD;
+        td5.onclick = hidden_row;
       }
       loadPowerGraph();
     }
@@ -204,11 +241,15 @@ button#updtsrchrst{margin:0 auto;}
 </ul>
 <div class="wrapper">
 <div id="main"></div>
+带宽><input type="text" style="width:50px" id="input_bandwidth" value="1"></input>khz,
+峰值><input type="text" style="width:50px" id="input_peakpower" value="-120"></input>dbFS
+<button onclick="start_filter()">过滤</button><button onclick="recover_filter()">复原</button>
 <table id="searchresult" border="1">
 <th>频率(hz)</th>
 <th>带宽(hz)</th>
 <th>峰值(dbFS)</th>
 <th>调制方案</th>
+<th>删除</th>
 </table>
 <button onclick="updateSrchRst()" id="updtsrchrst">确定</button>
 </div>

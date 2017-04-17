@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scanner_Result>
+<program><freq>99492000</freq><bandwidth>30000</bandwidth><peak>-38.290535</peak><mcs>FM</mcs></program>
+<program><freq>100500496</freq><bandwidth>15000</bandwidth><peak>-40.082371</peak><mcs>FM</mcs></program>
+<program><freq>100697504</freq><bandwidth>47000</bandwidth><peak>-34.856709</peak><mcs>FM</mcs></program>
 </Scanner_Result>
